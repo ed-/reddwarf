@@ -56,6 +56,7 @@ from nova import utils
 from nova import volume
 from nova.compute import power_state
 from nova.virt import driver
+from nova.volume import volume_client
 
 
 FLAGS = flags.FLAGS
@@ -134,6 +135,8 @@ class ComputeManager(manager.SchedulerDependentManager):
         self.network_manager = utils.import_object(FLAGS.network_manager)
         self.volume_manager = utils.import_object(FLAGS.volume_manager)
         self.network_api = network.API()
+        self.volume_api = volume.API()
+        self.volume_client = utils.import_object(FLAGS.volume_driver)
         self._last_host_check = 0
         super(ComputeManager, self).__init__(service_name="compute",
                                              *args, **kwargs)
@@ -255,6 +258,12 @@ class ComputeManager(manager.SchedulerDependentManager):
         # TODO(vish) check to make sure the availability zone matches
         self._update_state(context, instance_id, power_state.BUILDING)
 
+        # Adding the volume creation and attachment before spawning
+        # TODO(rnirmal): populate size, name and description somehow
+        volume = self.volume_api.create(context, size, name, description)
+        # TODO(rnirmal): change mount point if needed
+        self.attach_volume(context, instance_id, volume.id, "/")
+
         try:
             self.driver.spawn(instance_ref)
         except Exception as ex:  # pylint: disable=W0702
@@ -326,6 +335,7 @@ class ComputeManager(manager.SchedulerDependentManager):
         volumes = instance_ref.get('volumes') or []
         for volume in volumes:
             self.detach_volume(context, instance_id, volume['id'])
+            self.volume_api.delete(context, volume['id'])
         if instance_ref['state'] == power_state.SHUTOFF:
             self.db.instance_destroy(context, instance_id)
             raise exception.Error(_('trying to destroy already destroyed'
@@ -812,12 +822,18 @@ class ComputeManager(manager.SchedulerDependentManager):
         instance_ref = self.db.instance_get(context, instance_id)
         LOG.audit(_("instance %(instance_id)s: attaching volume %(volume_id)s"
                 " to %(mountpoint)s") % locals(), context=context)
-        dev_path = self.volume_manager.setup_compute_volume(context,
-                                                            volume_id)
+        dev_path = self.volume_client.setup_volume(context, volume_id)
+
         try:
-            self.driver.attach_volume(instance_ref['name'],
-                                      dev_path,
-                                      mountpoint)
+            if self.volume_client.option.format:
+                self.volume_client.format(dev_path)
+            if self.volume_client.option.mount:
+                self.volume_client.mount(dev_path, mountpoint)
+                self.driver.use_volume(instance_ref['name'], mountpoint)
+            else:
+                self.driver.attach_volume(instance_ref['name'],
+                                          dev_path,
+                                          mountpoint)
             self.db.volume_attached(context,
                                     volume_id,
                                     instance_id,
@@ -828,8 +844,7 @@ class ComputeManager(manager.SchedulerDependentManager):
             #             ecxception below.
             LOG.exception(_("instance %(instance_id)s: attach failed"
                     " %(mountpoint)s, removing") % locals(), context=context)
-            self.volume_manager.remove_compute_volume(context,
-                                                      volume_id)
+            self.volume_client.remove_volume(context, volume_id)
             raise exc
 
         return True
@@ -850,7 +865,7 @@ class ComputeManager(manager.SchedulerDependentManager):
         else:
             self.driver.detach_volume(instance_ref['name'],
                                       volume_ref['mountpoint'])
-        self.volume_manager.remove_compute_volume(context, volume_id)
+        self.volume_client.remove_volume(context, volume_id)
         self.db.volume_detached(context, volume_id)
         return True
 

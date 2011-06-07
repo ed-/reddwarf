@@ -118,6 +118,10 @@ class ComputeDriver(object):
         off the instance copies over the COW disk"""
         raise NotImplementedError()
 
+    def use_volume(self, mountpoint):
+        """Use the provided volume and deal with it"""
+        raise  NotImoplementedError()
+
     def snapshot(self, instance, image_id):
         """Create snapshot from a running VM instance."""
         raise NotImplementedError()

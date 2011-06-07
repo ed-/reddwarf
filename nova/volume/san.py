@@ -583,3 +583,11 @@ class HpSanISCSIDriver(SanISCSIDriver):
         cliq_args['volumeName'] = volume['name']
 
         self._cliq_run_xml("unassignVolume", cliq_args)
+
+    def discover_volume(self, context, volume):
+        """Discover and attach a remote volume as a local device"""
+        pass
+
+    def undiscover_volume(self, volume):
+        """Detach the volume and local device"""
+        pass
