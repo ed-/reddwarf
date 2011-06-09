@@ -591,3 +591,75 @@ class HpSanISCSIDriver(SanISCSIDriver):
     def undiscover_volume(self, volume):
         """Detach the volume and local device"""
         pass
+
+
+class ISCSILiteDriver(HpSanISCSIDriver):
+    """ISCSILite Driver, basic ISCSI target features
+
+    This is a Lite ISCSI driver which uses all the client functioanlity
+    within the HPSAN ISCSI driver but replaces the server side with calls
+    to a software iscsitarget over ssh.
+    """
+
+    def check_for_setup_error(self):
+        """Check for any errors at setup for fast fail"""
+        pass
+
+    def create_volume(self, volume):
+        """Create a volume on the iscsitarget"""
+        name = volume['name']
+        size = volume['size']*128
+        id = volume['id']
+        LOG.debug(_("Creating volume %s of size %dMB"), name, size)
+        try:
+            self._run_ssh("sudo mkdir -p /san")
+            self._run_ssh("sudo dd if=/dev/zero of=/san/%s.img bs=1024k count=%d"
+                        % (id, size))
+        except exception.ProcessExecutionError as err:
+            LOG.error(err)
+            raise
+
+    def delete_volume(self, volume):
+        """Delete a volume on the iscsitarget"""
+        try:
+            self._run_ssh("sudo rm /san/%s.img" % volume['id'])
+        except exception.ProcessExecutionError as err:
+            LOG.error(err)
+            raise
+
+    def create_export(self, context, volume):
+        """Make the volume available on the storage server"""
+        self._ensure_iscsi_targets(context, FLAGS.san_ip)
+        iscsi_target = self.db.volume_allocate_iscsi_target(context,
+                                                      volume['id'],
+                                                      FLAGS.san_ip)
+        try:
+            # Create a target with the specified id
+            self._run_ssh("sudo ietadm --op new --tid=%s --params " \
+                          "Name=iqn.2011-06.reddwarf.com:%s"
+                          % (iscsi_target, volume['id']))
+            # Create a LUN on the target and define storage
+            self._run_ssh("sudo ietadm --op new --tid=%s --lun=0 " \
+                          "--params Path=/san/%s.img,Type=fileio"
+                          % (iscsi_target, volume['id']))
+            # Update CHAP user info for the target
+            self._run_ssh("sudo ietadm --op new --tid=1%s --user --params" \
+                          " IncomingUser=username,Password=password"
+                          % iscsi_target)
+        except exception.ProcessExecutionError as err:
+            LOG.error(err)
+            raise
+
+    def remove_export(self, context, volume):
+        """Remove the export on the storage server"""
+        tid = self.db.volume_get_iscsi_target_num(context, volume['id'])
+        try:
+            self._run_ssh("sudo ietadm --op delete --tid=%s" % tid)
+        except exception.ProcessExecutionError as err:
+            LOG.error(err)
+            raise
+        # TODO(rnirmal): The target doesn't seem to get deleted from the db
+
+    def ensure_export(self, context, volume):
+        """Make sure existing volumes are exported"""
+        pass

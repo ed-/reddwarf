@@ -1,6 +1,7 @@
 
 from numbers import Number
 import os
+import time
 import unittest
 
 import pexpect
@@ -11,6 +12,7 @@ from nova.exception import VolumeNotFound
 
 from proboscis import test
 from proboscis.decorators import expect_exception
+from tests import initialize
 from tests.volumes import VOLUMES_DIRECT
 from tests.util import test_config
 
@@ -59,7 +61,7 @@ class VolumeTest(unittest.TestCase):
         self.assertTrue(volume["display_name"], self.story.volume_name)
         self.assertTrue(volume["display_description"], self.story.volume_desc)
 
-@test(groups=VOLUMES_DIRECT)
+@test(groups=VOLUMES_DIRECT, depends_on_classes=[initialize.Volume])
 class SetUp(VolumeTest):
 
     def test_go(self):
@@ -68,6 +70,8 @@ class SetUp(VolumeTest):
         if os.path.exists(LOCAL_MOUNT_PATH):
             os.rmdir(LOCAL_MOUNT_PATH)
         os.mkdir(LOCAL_MOUNT_PATH)
+        # Give some time for the services to startup
+        time.sleep(10)
 
 
 @test(groups=VOLUMES_DIRECT, depends_on_classes=[SetUp])
@@ -80,7 +84,7 @@ class AddVolume(VolumeTest):
         self.story.volume_name = name
         self.story.volume_desc = desc
         volume = self.story.api.create(context.get_admin_context(), size = 1,
-                                       name=name, description=desc);
+                                       name=name, description=desc)
         self.assert_volume_as_expected(volume)
         self.story.volume = volume
         self.story.volume_id = volume["id"]

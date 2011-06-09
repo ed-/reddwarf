@@ -122,7 +122,7 @@ class Dns(unittest.TestCase):
             self.service.start()
 
 
-@test(groups=["services.initialize"], depends_on_classes=[GlanceApi])
+@test(groups=["services.initialize"])
 class Scheduler(unittest.TestCase):
     """Starts the scheduler service."""
 
@@ -150,7 +150,7 @@ class Compute(unittest.TestCase):
             self.service.start()
 
 
-@test(groups=["services.initialize"], depends_on_classes=[GlanceApi])
+@test(groups=["services.initialize"], depends_on_classes=[Scheduler])
 class Volume(unittest.TestCase):
     """Starts the volume service."""
 
