@@ -2,19 +2,19 @@ vagrant_init_ssh_info() {
      # If the SSH info isn't defined, figure it out here.
     if [ -z "${vcmd_port}" ]
     then
-        vcmd_port=`vagrant ssh_config | grep Port | cut -c 8-`
+        vcmd_port=`vagrant ssh_config host | grep Port | cut -c 8-`
     fi
     if [ -z "${vcmd_host}" ]
     then
-        vcmd_host=`vagrant ssh_config | grep HostName | cut -c 12-`
+        vcmd_host=`vagrant ssh_config host | grep HostName | cut -c 12-`
     fi
     if [ -z "${vcmd_idfile}" ]
     then
-        vcmd_idfile=`vagrant ssh_config | grep IdentityFile | cut -c 16-`
+        vcmd_idfile=`vagrant ssh_config host | grep IdentityFile | cut -c 16-`
     fi
     if [ -z "${vcmd_user}" ]
     then
-        vcmd_user=`vagrant ssh_config | grep User | cut -c 8-`
+        vcmd_user=`vagrant ssh_config host | grep User | cut -c 8-`
     fi
 }
 

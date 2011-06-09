@@ -1,38 +1,36 @@
 Vagrant::Config.run do |config|
+  # Host config
+  config.vm.define :host do |host_config|
+      if ! ENV['GLANCEIMAGES']
+        raise ArgumentError, "GLANCEIMAGES environment variable not defined."
+      end
+      if ! ENV['GLANCESRC']
+        raise ArgumentError, "GLANCESRC environment variable not defined."
+      end
 
-  if ! ENV['GLANCEIMAGES']
-    raise ArgumentError, "GLANCEIMAGES environment variable not defined."
+      # Assign this VM to a host only network IP, allowing you to access it
+      # via the IP. The IP for the volume vm is "33.33.33.10"
+      host_config.vm.network "33.33.33.11"
+
+      host_config.vm.box = "ovz_attempt_9"
+      host_config.vm.box_url = "http://c205047.r47.cf1.rackcdn.com/ovz_attempt_9.box"
+
+      host_config.vm.share_folder "glance", "/glance", ENV['GLANCESRC']
+      host_config.vm.share_folder "glance_images", "/glance_images", ENV['GLANCEIMAGES']
+      host_config.vm.share_folder "nova", "/src", "../../../"
+      if ENV['RSDNS']
+        rsdns_dir = ENV['RSDNS']
+        if File.directory?(rsdns_dir)
+            host_config.vm.share_folder "rsdns", "/rsdns", ENV['RSDNS']
+        end
+      end
+      host_config.vm.share_folder "vagrant-common", "/vagrant-common", "./../common"
+      host_config.vm.share_folder "tests", "/tests", "./../../"
   end
-  if ! ENV['GLANCESRC']
-    raise ArgumentError, "GLANCESRC environment variable not defined."
+
+  # Volume Config
+  config.vm.define :volume do |volume_config|
+    volume_config.vm.box = "volumeserver"
+    volume_config.vm.network "33.33.33.10"
   end
-
-  # Assign this VM to a host only network IP, allowing you to access it
-  # via the IP. The IP for the volume vm is "33.33.33.10"
-  config.vm.network "33.33.33.11"
-
-  config.vm.box = "ovz_attempt_9"
-  config.vm.box_url = "http://c205047.r47.cf1.rackcdn.com/ovz_attempt_9.box"
-
-  # Forward guest port 80 to host port 4567 and name the mapping "web"
-  config.vm.forward_port("nova-api", 8774, 12774)
-  config.vm.forward_port("platform-api", 8775, 12775)
-  config.vm.forward_port("jenkins", 8080, 8989)
-
-  #TODO: Change from hardcoded path (see guest vagrant file for example)
-  config.vm.share_folder "glance", "/glance", ENV['GLANCESRC']
-  config.vm.share_folder "glance_images", "/glance_images", ENV['GLANCEIMAGES']
-  config.vm.share_folder "nova", "/src", "../../../"
-  if ENV['RSDNS']
-    rsdns_dir = ENV['RSDNS']
-    if File.directory?(rsdns_dir)
-        config.vm.share_folder "rsdns", "/rsdns", ENV['RSDNS']
-    end
-  end
-#  config.vm.share_folder "firstboot", "/src/firstboot", "../../../firstboot"
-#  config.vm.share_folder "dbaas-mycnf", "/src/dbaas-mycnf",  "../../../dbaas-mycnf"
-  config.vm.share_folder "vagrant-common", "/vagrant-common", "./../common"
-  config.vm.share_folder "tests", "/tests", "./../../"
-
-  #config.vm.provision :shell, :path => "on_up.sh"
 end
