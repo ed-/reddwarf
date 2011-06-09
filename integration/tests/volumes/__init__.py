@@ -1,7 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2010 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration.
+# Copyright (c) 2011 OpenStack, LLC.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,5 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nova.volume.api import API
-from nova.volume.volume_client import VolumeClient as Client
+"""
+:mod:`volumes` -- Tests for volumes.
+===================================
+"""
+
+""""Tests for Volumes."""
+
+# Is a set of tests written directly against the VolumeManager and VolumeClient
+# classes which doesn't require standing up Nova daemons or anything.
+VOLUMES_DIRECT = "nova.volumes.direct"
