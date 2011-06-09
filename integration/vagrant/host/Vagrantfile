@@ -7,6 +7,10 @@ Vagrant::Config.run do |config|
     raise ArgumentError, "GLANCESRC environment variable not defined."
   end
 
+  # Assign this VM to a host only network IP, allowing you to access it
+  # via the IP. The IP for the volume vm is "33.33.33.10"
+  config.vm.network "33.33.33.11"
+
   config.vm.box = "ovz_attempt_9"
   config.vm.box_url = "http://c205047.r47.cf1.rackcdn.com/ovz_attempt_9.box"
 
