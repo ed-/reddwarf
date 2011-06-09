@@ -13,11 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
+from collections import namedtuple
 
 from nova import db
 from nova import exception
 from nova import flags
+from nova import log as logging
+from nova import utils
 
 LOG = logging.getLogger("nova.volume.volume_client")
 FLAGS = flags.FLAGS
@@ -61,6 +63,10 @@ class VolumeClient(object):
         """Format the specified device"""
         pass
 
-    def mount(self, device_path, mountpoint):
-        """Mount the specified device at the mountpoint"""
+    def mount(self, device_path, mount_point):
+        """Mount the specified device at the mount point"""
+        pass
+
+    def unmount(self, mount_point):
+        """Unmount the filesystem at the mount point."""
         pass
