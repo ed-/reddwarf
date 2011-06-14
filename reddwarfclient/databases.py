@@ -30,24 +30,22 @@ class Databases(base.ManagerWithFind):
         url = "/dbcontainers/%s/databases/%s" % (dbcontainer_id, dbname)
         self._delete(url)
 
-#    def _list(self, url, response_key):
-#        resp, body = self.api.client.get(url)
-#        if not body:
-#            raise Exception("Call to " + url +
-#                            " did not return a body.")
-#        return [self.resource_class(self, res) for res in body[response_key]]
-#
-#    def list(self, dbcontainer):
-#        """
-#        Get a list of all dbcontainers.
-#
-#        :rtype: list of :class:`Database`.
-#        """
-#        assert isinstance(dbcontainer, DbContainer)
-#        dbcontainer_id = base.getid(dbcontainer)
-#        return self._list("/dbcontainers/%s/databases/detail" % dbcontainer_id,
-#                          "databases")
-#
+    def _list(self, url, response_key):
+        resp, body = self.api.client.get(url)
+        if not body:
+            raise Exception("Call to " + url +
+                            " did not return a body.")
+        return [self.resource_class(self, res) for res in body[response_key]]
+
+    def list(self, dbcontainer):
+        """
+        Get a list of all Databases from the dbcontainer.
+
+        :rtype: list of :class:`Database`.
+        """
+        return self._list("/dbcontainers/%s/databases" % base.getid(dbcontainer),
+                          "databases")
+
 #    def get(self, dbcontainer, database):
 #        """
 #        Get a specific containers.

@@ -98,11 +98,15 @@ class TestDatabases(unittest.TestCase):
     dbname_regex = "third\s\#\?\@some\_\-"
     dbname_urlencoded = "third%20%23%3F%40some_-"
 
+    dbname2 = "seconddb"
+    created_dbs = [dbname, dbname2]
+    system_dbs = ['information_schema','mysql']
+
     def test_create_database(self):
         databases = list()
         databases.append({"name": self.dbname, "charset": "latin2",
                           "collate": "latin2_general_ci"})
-        databases.append({"name": "seconddb"})
+        databases.append({"name": self.dbname2})
 
         dbaas.databases.create(container_info.id, databases)
         time.sleep(5)
@@ -112,6 +116,25 @@ class TestDatabases(unittest.TestCase):
         else:
             self.assertFalse(True)
 
+    def test_create_database_list(self):
+        databases = dbaas.databases.list(container_info.id)
+        found = False
+        for db in self.created_dbs:
+            for result in databases:
+                if result.name == db:
+                    found = True
+            self.assertTrue(found, "Database '%s' not found in result" %db)
+            found = False
+
+    def test_create_database_list_system(self):
+        #Databases that should not be returned in the list
+        databases = dbaas.databases.list(container_info.id)
+        found = False
+        for db in self.system_dbs:
+            found = any(result.name == db for result in databases)
+            self.assertFalse(found, "Database '%s' SHOULD NOT be found in result" %db)
+            found = False
+            
     @expect_exception(NotFound)
     def test_create_database_on_missing_container(self):
         databases = [{"name": "invalid_db", "charset": "latin2",
@@ -150,6 +173,9 @@ class TestUsers(unittest.TestCase):
     db1 = "firstdb"
     db2 = "seconddb"
 
+    created_users = [username, username1]
+    system_users = ['root', 'debian_sys_maint']
+
     def test_create_users(self):
         users = list()
         users.append({"name": self.username, "password": self.password,
@@ -165,6 +191,26 @@ class TestUsers(unittest.TestCase):
                                     [self.db1])
         self.check_database_for_user(self.username1, self.password1,
                                     [self.db1, self.db2])
+
+    def test_create_users_list(self):
+        #tests for users that should be listed
+        users = dbaas.users.list(container_info.id)
+        found = False
+        for user in self.created_users:
+            for result in users:
+                if user == result.name:
+                    found = True
+            self.assertTrue(found, "User '%s' not found in result" %user)
+            found = False
+
+    def test_create_users_list_system(self):
+        #tests for users that should not be listed
+        users = dbaas.users.list(container_info.id)
+        found = False
+        for user in self.system_users:
+            found = any(result.name == user for result in users)
+            self.assertFalse(found, "User '%s' SHOULD NOT BE found in result" %user)
+            found = False
 
     def test_delete_users(self):
         global dbaas
@@ -216,6 +262,23 @@ class TestUsers(unittest.TestCase):
 
     def test_reset_root(self):
         self._root()
+
+    def test_reset_root_user_enabled(self):
+        created_users= ['root']
+        self.system_users.remove('root')
+        users = dbaas.users.list(container_info.id)
+        found = False
+        for user in created_users:
+            found = any(result.name == user for result in users)
+            self.assertTrue(found, "User '%s' not found in result" %user)
+            found = False
+
+        found = False
+        for user in self.system_users:
+            found = any(result.name == user for result in users)
+            self.assertFalse(found, "User '%s' SHOULD NOT BE found in result" %user)
+            found = False
+
 
     def test_zdisable_root(self):
         global dbaas

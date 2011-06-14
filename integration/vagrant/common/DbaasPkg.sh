@@ -75,13 +75,14 @@ dbaas_pkg_install_nova() {
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-common
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-compute
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-doc
+    sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-dns
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-guest
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-instancemonitor
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-network
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-objectstore
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-scheduler
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid nova-volume
-    sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid platform-api
+    sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid reddwarf-api
     sudo -E reprepro -Vb /var/www/ubuntu/ remove lucid python-nova
 
 
@@ -114,4 +115,17 @@ dbaas_pkg_install_rsdns() {
     else
         echo "Not installing RS DNS because it wasn't found."
     fi
+}
+
+dbaas_pkg_upload_release() {
+    # Installs the release. Assumes the /tmp/build stuff is already done and exists
+    cd /tmp/build/dbaas
+    gitversion=`cat /tmp/build/dbaas/_version.txt`
+    output=`grep 'BEGIN PGP SIGNED MESSAGE' /tmp/build/nova_${gitversion}_amd64.changes|wc -l`
+    if [ $output == 0 ]
+    then
+      echo "signing packages"
+      sudo -E debsign /tmp/build/nova_`echo $gitversion`_amd64.changes
+    fi
+    sudo -E dupload -f --to nova /tmp/build/nova_`echo $gitversion`_amd64.changes
 }

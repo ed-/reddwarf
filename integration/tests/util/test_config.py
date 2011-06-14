@@ -102,7 +102,7 @@ def _setup():
         raise ValueError("Configuration value \"nova_conf\" not found.")
 
     dbaas = WebService(cmd=python_cmd_list() +
-                           ["%s/bin/platform-api" % nova_code_root,
+                           ["%s/bin/reddwarf-api" % nova_code_root,
                             "--flagfile=%s" % nova_conf],
                         url=dbaas_url)
     nova = WebService(cmd=python_cmd_list() +

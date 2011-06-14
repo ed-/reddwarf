@@ -37,8 +37,9 @@ class Controller(common.DBaaSController):
     _serialization_metadata = {
         'application/xml': {
             'attributes': {
-                'user': ['name', 'password']},
-            'plurals': ['user']}}
+                'user': ['name', 'password']}
+        },
+    }
 
     def __init__(self):
         self.guest_api = guest_api.API()
@@ -49,7 +50,17 @@ class Controller(common.DBaaSController):
         """ Returns a list database users for the db container """
         LOG.info("Call to Users index - %s", dbcontainer_id)
         LOG.debug("%s - %s", req.environ, req.body)
-        return exc.HTTPNotImplemented()
+        ctxt = req.environ['nova.context']
+        common.instance_exists(ctxt, dbcontainer_id, self.compute_api)
+        result = self.guest_api.list_users(ctxt, dbcontainer_id)
+        LOG.debug("LIST USERS RESULT - %s", str(result))
+        users = {'users':[]}
+        for user in result:
+            mysql_user = models.MySQLUser()
+            mysql_user.deserialize(user)
+            users['users'].append({'name': mysql_user.name})
+        LOG.debug("LIST USERS RETURN - %s", users)
+        return users
 
     def delete(self, req, dbcontainer_id, id):
         """ Deletes a user in the db container """

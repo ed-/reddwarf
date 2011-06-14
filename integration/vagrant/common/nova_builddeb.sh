@@ -33,22 +33,27 @@ echo "$gitversion" > /tmp/build/dbaas/_version.txt
 
 # add the packages to the control file to make sure we also build our packages
 # Build package section, adding in the platform api and nova guest!
-echo 'Package: platform-api
+echo 'Package: reddwarf-api
 Architecture: all
 Depends: nova-common (= ${binary:Version}), ${python:Depends}, ${misc:Depends}
-Description: OpenStack Platform - Nova - API frontend' >> debian/control
+Description: Red Dwarf - Nova - API frontend' >> debian/control
 echo '' >> debian/control
 echo 'Package: nova-guest
 Architecture: all
 Depends: nova-common (= ${binary:Version}), ${python:Depends}, ${misc:Depends}
-Description: OpenStack Platform - Nova - Guest agent' >> debian/control
+Description: Red Dwarf - Nova - Guest agent' >> debian/control
+echo '' >> debian/control
+echo 'Package: nova-dns
+Architecture: all
+Depends: nova-common (= ${binary:Version}), ${python:Depends}, ${misc:Depends}
+Description: Red Dwarf - Nova - DNS' >> debian/control
 
 echo "nova ($gitversion) lucid; urgency=low
 
   [aut-gen]
   * generated version from the integration build.
 
- -- Auto Gen <dbaas-dev@rackspace.com>  `date +'%a, %d %b %Y %I:%M:%S %z'`
+ -- Apt Repo <dbaas-dev@rackspace.com>  `date +'%a, %d %b %Y %I:%M:%S %z'`
 
 " | cat - debian/changelog >> debian/changelog.tmp
 mv debian/changelog.tmp debian/changelog
@@ -60,10 +65,17 @@ sed -i.bak -e 's/ natty;/ lucid;/g' debian/changelog
 for file in `ls debian/ |grep nova-api`
 do
    cp debian/$file "debian/nova-guest."`echo $file|cut -d'.' -f2`
-   cp debian/$file "debian/platform-api."`echo $file|cut -d'.' -f2`
+   cp debian/$file "debian/reddwarf-api."`echo $file|cut -d'.' -f2`
+   cp debian/$file "debian/nova-dns."`echo $file|cut -d'.' -f2`
 done
 sed -i.bak -e 's/nova-api/nova-guest/g' debian/nova-guest.*
-sed -i.bak -e 's/nova-api/platform-api/g' debian/platform-api.*
+sed -i.bak -e 's/nova-api/reddwarf-api/g' debian/reddwarf-api.*
+sed -i.bak -e 's/nova-api/nova-dns/g' debian/nova-dns.*
+
+#Fix the api paste config
+sed -i.bak -e 's/api-paste\.ini/reddwarf-api-paste\.ini/g' debian/reddwarf-api.install
+echo 'usr/bin/reddwarf-cli' >> debian/reddwarf-api.install
+echo 'usr/bin/reddwarf-manage' >> debian/reddwarf-api.install
 
 #hack up the rules file thats broken
 echo '--sql_connection=mysql://nova:novapass@10.0.2.15/nova' >> debian/nova.conf

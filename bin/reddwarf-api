@@ -52,7 +52,7 @@ flags.DEFINE_integer('platformapi_max_limit', 1000,
 flags.DEFINE_string('dbaasapi_listen', "0.0.0.0",
                     'IP address for DBaaS API to listen')
 flags.DEFINE_integer('dbaasapi_listen_port', 8775, 'Port for DBaaS API to listen')
-flags.DEFINE_string('platformapi_paste_config', "platform-api-paste.ini",
+flags.DEFINE_string('platformapi_paste_config', "reddwarf-api-paste.ini",
                     'File name for the paste.deploy config for platform-api')
 
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     utils.default_flagfile()
     FLAGS(sys.argv)
     logging.setup()
-    LOG.audit(_("Starting platform-api node (version %s)"),
+    LOG.audit(_("Starting reddwarf-api node (version %s)"),
               version.version_string_with_vcs())
     LOG.debug(_("Full set of FLAGS:"))
     for flag in FLAGS:

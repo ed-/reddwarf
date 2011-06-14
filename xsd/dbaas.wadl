@@ -4,35 +4,46 @@
    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
    xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
    xmlns:dbaas="http://docs.rackspacecloud.com/database/api/v1.0">
+
   <grammars>
     <include href="dbaas.xsd"/>
   </grammars>
+
   <resources base="https://auth.api.rackspacecloud.com">
     <resource id="dbcontainers" path="dbcontainers">
       <method href="#createContainer"/>
+      <method href="#getContainer"/>
+      <method href="#getContainerDetails"/>
       <resource id="containerId" path="{containerId}">
-         <param name="containerId" style="template" type="xsd:string"/>
-         <method href="#deleteContainer"/>
-         <resource id="databases" path="databases">
-            <method href="#createDatabase" />
-            <resource id="databaseName" path="{databaseName}">
-               <method href="#deleteDatabase" />
-            </resource>
-         </resource>
-         <resource id="users" path="users">
-            <method href="#createUser"/>
-            <resource id="userId" path="{userId}">
-               <method href="#deleteUser" />
-            </resource>
-         </resource>
-         <resource id="root" path="root">
-            <method href="#createRoot"/>
-            <method href="#deleteRoot" />
+        <param name="containerId" style="template" type="xsd:string"/>
+        <method href="#getContainerById"/>
+        <method href="#deleteContainer"/>
+        <resource id="databases" path="databases">
+          <method href="#createDatabase" />
+          <method href="#getDatabases"/>
+          <resource id="databaseName" path="{databaseName}">
+            <method href="#deleteDatabase" />
+            <method href="#getDatabase"/>
+          </resource>
+        </resource>
+        <resource id="users" path="users">
+          <method href="#createUser"/>
+          <method href="#getUsers"/>
+          <resource id="userId" path="{userId}">
+            <method href="#getUser"/>
+            <method href="#deleteUser" />
+          </resource>
+        </resource>
+        <resource id="root" path="root">
+          <method href="#createRoot"/>
+          <method href="#deleteRoot" />
          </resource>
       </resource>
     </resource>
   </resources>
+
   <!--Token Methods...-->
+  <!-- Container -->
   <method name="POST" id="createContainer">
     <request>
       <representation mediaType="application/xml" element="dbaas:DatabaseContainer" />
@@ -47,44 +58,103 @@
       </representation>
     </response>
     <response status="400 401 403 409 500 503">
-      <representation mediaType="applicaiton/xml"/>
-      <representation mediaType="applicaiton/json"/>
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
     </response>
   </method>
+
   <method name="DELETE" id="deleteContainer">
     <response status="202"/>
     <response status="400 401 403 409 500 503">
-      <representation mediaType="applicaiton/xml"/>
-      <representation mediaType="applicaiton/json"/>
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
     </response>
   </method>
- 
+
+  <method name="GET" id="getContainer">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:DatabaseContainers"/>
+      <representation mediaType="application/json" element="dbaas:DatabaseContainers"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <method name="GET" id="getContainerDetails">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:DatabaseContainers"/>
+      <representation mediaType="application/json" element="dbaas:DatabaseContainers"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <method name="GET" id="getContainerById">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:DatabaseContainer"/>
+      <representation mediaType="application/json" element="dbaas:DatabaseContainer"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+ <!-- Database -->
   <method name="POST" id="createDatabase">
-      <request>
-        <representation mediaType="application/xml" element="dbaas:Database" />
-        <representation mediaType="application/json"/>
-      </request>
-      <response status="201">
-        <representation mediaType="application/xml" element="dbaas:Database">
-          <param name="Location" type="xsd:anyURI" style="header"/>
-        </representation>
-        <representation mediaType="application/json">
-          <param name="Location" type="xsd:anyURI" style="header"/>
-        </representation>
-      </response>
-      <response status="400 401 403 409 500 503">
-        <representation mediaType="applicaiton/xml"/>
-        <representation mediaType="applicaiton/json"/>
-      </response>
-    </method>
-    <method name="DELETE" id="deleteDatabase">
-      <response status="202"/>
-      <response status="400 401 403 409 500 503">
-        <representation mediaType="applicaiton/xml"/>
-        <representation mediaType="applicaiton/json"/>
-      </response>
-    </method>
-  
+    <request>
+      <representation mediaType="application/xml" element="dbaas:Database"/>
+      <representation mediaType="application/json" element="dbaas:Database"/>
+    </request>
+    <response status="201">
+      <representation mediaType="application/xml" element="dbaas:Database">
+        <param name="Location" type="xsd:anyURI" style="header"/>
+      </representation>
+      <representation mediaType="application/json" element="dbaas:Database">
+        <param name="Location" type="xsd:anyURI" style="header"/>
+      </representation>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <method name="GET" id="getDatabase">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:Database"/>
+      <representation mediaType="application/json" element="dbaas:Database"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <method name="GET" id="getDatabases">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:Databases"/>
+      <representation mediaType="application/json" element="dbaas:Databases"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <method name="DELETE" id="deleteDatabase">
+    <response status="202"/>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <!-- User -->
   <method name="POST" id="createUser">
     <request>
       <representation mediaType="application/xml" element="dbaas:Users" />
@@ -99,41 +169,64 @@
       </representation>
     </response>
     <response status="400 401 403 409 500 503">
-      <representation mediaType="applicaiton/xml"/>
-      <representation mediaType="applicaiton/json"/>
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
     </response>
   </method>
+
+  <method name="GET" id="getUser">
+    <response status="200"/>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml" element="dbaas:User"/>
+      <representation mediaType="application/json" element="dbaas:User"/>
+    </response>
+  </method>
+
+  <method name="GET" id="getUsers">
+    <response status="200">
+      <representation mediaType="application/xml" element="dbaas:Users"/>
+      <representation mediaType="application/json" element="dbaas:Users"/>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
   <method name="DELETE" id="deleteUser">
     <response status="202"/>
     <response status="400 401 403 409 500 503">
-      <representation mediaType="applicaiton/xml"/>
-      <representation mediaType="applicaiton/json"/>
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
+  <!-- Root -->
+  <method name="POST" id="createRoot">
+    <request>
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </request>
+    <response status="201">
+      <representation mediaType="application/xml" element="dbaas:User">
+        <param name="Location" type="xsd:anyURI" style="header"/>
+      </representation>
+      <representation mediaType="application/json" element="dbaas:User">
+        <param name="Location" type="xsd:anyURI" style="header"/>
+      </representation>
+    </response>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
     </response>
   </method>
   
-  <method name="POST" id="createRoot">
-      <request>
-        <representation mediaType="application/xml"/>
-        <representation mediaType="application/json"/>
-      </request>
-      <response status="201">
-        <representation mediaType="application/xml" element="dbaas:User">
-          <param name="Location" type="xsd:anyURI" style="header"/>
-        </representation>
-        <representation mediaType="application/json">
-          <param name="Location" type="xsd:anyURI" style="header"/>
-        </representation>
-      </response>
-      <response status="400 401 403 409 500 503">
-        <representation mediaType="applicaiton/xml"/>
-        <representation mediaType="applicaiton/json"/>
-      </response>
-    </method>
-    <method name="DELETE" id="deleteRoot">
-      <response status="202"/>
-      <response status="400 401 403 409 500 503">
-        <representation mediaType="applicaiton/xml"/>
-        <representation mediaType="applicaiton/json"/>
-      </response>
-    </method>
+  <method name="DELETE" id="deleteRoot">
+    <response status="202"/>
+    <response status="400 401 403 409 500 503">
+      <representation mediaType="application/xml"/>
+      <representation mediaType="application/json"/>
+    </response>
+  </method>
+
 </application>

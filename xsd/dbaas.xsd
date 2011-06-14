@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--(C) 2010 Rackspace Hosting, All Rights Reserved-->
+<!--(C) 2011 Rackspace Hosting, All Rights Reserved-->
 <schema  elementFormDefault="qualified" 
          attributeFormDefault="unqualified" 
          targetNamespace="http://docs.rackspacecloud.com/database/api/v1.0" 
@@ -67,6 +67,57 @@
       </xsd:appinfo>
     </annotation>
   </element>
+  <element name="containers" type="dbaas:DatabaseContainers">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>Database Containers.</p>
+      </xsd:documentation>
+      <xsd:appinfo>
+        <xsdxt:samples>
+          <xsdxt:sample>
+            <xsdxt:code type="application/xml" href="../samples/user.xml"/>
+          </xsdxt:sample>
+          <xsdxt:sample>
+            <xsdxt:code type="application/json" href="../samples/user.json"/>
+          </xsdxt:sample>
+        </xsdxt:samples>
+      </xsd:appinfo>
+    </annotation>
+  </element>
+  <element name="database" type="dbaas:Database">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>A Database.</p>
+      </xsd:documentation>
+      <xsd:appinfo>
+        <xsdxt:samples>
+          <xsdxt:sample>
+            <xsdxt:code type="application/xml" href="../samples/user.xml"/>
+          </xsdxt:sample>
+          <xsdxt:sample>
+            <xsdxt:code type="application/json" href="../samples/user.json"/>
+          </xsdxt:sample>
+        </xsdxt:samples>
+      </xsd:appinfo>
+    </annotation>
+  </element>
+  <element name="databases" type="dbaas:Databases">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>List of Databases.</p>
+      </xsd:documentation>
+      <xsd:appinfo>
+        <xsdxt:samples>
+          <xsdxt:sample>
+            <xsdxt:code type="application/xml" href="../samples/user.xml"/>
+          </xsdxt:sample>
+          <xsdxt:sample>
+            <xsdxt:code type="application/json" href="../samples/user.json"/>
+          </xsdxt:sample>
+        </xsdxt:samples>
+      </xsd:appinfo>
+    </annotation>
+  </element>
   
   <!--Complex Types-->
   <complexType name="Users">
@@ -83,7 +134,7 @@
      
   <complexType name="User">
     <sequence>
-       <element name="databases" type="xsd:Database" minOccurs="0" maxOccurs="unbounded">
+       <element name="databases" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
          <annotation>
            <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
              <p>A list of databases.</p>
@@ -120,7 +171,19 @@
       </annotation>
     </attribute>
   </complexType>
-  
+
+  <complexType name="DatabaseContainers">
+    <sequence>
+      <element name="DatabaseContainers" type="dbaas:DatabaseContainer" minOccurs="0" maxOccurs="unbounded">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>A list of database containers.</p>
+          </xsd:documentation>
+        </annotation>
+      </element>
+    </sequence>
+  </complexType>
+
   <complexType name="DatabaseContainer">
    <sequence>
       <element name="databases" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
@@ -167,7 +230,20 @@
      </annotation>
    </attribute>
  </complexType>
- 
+
+
+  <complexType name="Databases">
+    <sequence>
+      <element name="Databases" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>A list of databases.</p>
+          </xsd:documentation>
+        </annotation>
+      </element>
+    </sequence>
+  </complexType>
+
  <complexType name="Database">
     <attribute name="character_set" type="xsd:string" use="optional">
        <annotation>
@@ -201,38 +277,24 @@
       </xsd:documentation>
     </annotation>
     <restriction base="xsd:string">
-      <enumeration value="HEALTHY">
+      <enumeration value="ACTIVE">
         <annotation>
           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
             <p>Healthy status.</p>
           </xsd:documentation>
         </annotation>
       </enumeration>
-      <enumeration value="DOWN">
+      <enumeration value="SHUTDOWN">
         <annotation>
           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
             <p>Down status.</p>
           </xsd:documentation>
         </annotation>
       </enumeration>
-      <enumeration value="UNAVAILABLE">
+      <enumeration value="BUILD">
         <annotation>
           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
             <p>unavailable status.</p>
-          </xsd:documentation>
-        </annotation>
-      </enumeration>
-      <enumeration value="PREPARING">
-        <annotation>
-          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
-            <p>Preparing status.</p>
-          </xsd:documentation>
-        </annotation>
-      </enumeration>
-      <enumeration value="INVALID">
-        <annotation>
-          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
-            <p>invalid status.</p>
           </xsd:documentation>
         </annotation>
       </enumeration>

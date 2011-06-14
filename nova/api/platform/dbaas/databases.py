@@ -51,7 +51,17 @@ class Controller(common.DBaaSController):
         """ Returns a list of Databases for the DBContainer """
         LOG.info("Call to Databases index - %s", dbcontainer_id)
         LOG.debug("%s - %s", req.environ, req.body)
-        return exc.HTTPNotImplemented()
+        ctxt = req.environ['nova.context']
+        common.instance_exists(ctxt, dbcontainer_id, self.compute_api)
+        result = self.guest_api.list_databases(ctxt, dbcontainer_id)
+        LOG.debug("LIST DATABASES RESULT - %s", str(result))
+        databases = {'databases':[]}
+        for database in result:
+            mysql_database = models.MySQLDatabase()
+            mysql_database.deserialize(database)
+            databases['databases'].append({'name': mysql_database.name})
+        LOG.debug("LIST DATABASES RETURN - %s", databases)
+        return databases
 
     def delete(self, req, dbcontainer_id, id):
         """ Deletes a Database """

@@ -31,3 +31,4 @@ contrib/images
 contrib/tty.tgz
 *.sqlite
 vagrantup.*
+.apitoken

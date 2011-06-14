@@ -109,12 +109,10 @@ if __name__ == '__main__':
 
     proboscis.register(groups=["host.ovz"], depends_on_groups=[
         "dbaas.guest",
-        "dbaas.guest.dns"
-        ])
-    proboscis.register(groups=["guest"], depends_on_groups=[
+        "dbaas.guest.dns",
         pkg_tests.GROUP,
-        dbaas_tests.GROUP
         ])
+
     atexit.register(_clean_up)
     proboscis.TestProgram(argv=nose_args, groups=groups)
 

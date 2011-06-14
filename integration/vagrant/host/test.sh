@@ -7,4 +7,4 @@ cd /src
 # nosetests /src/integration/tests/util/util_test.py --verbose
 
 cd /tests
-sudo -E NOVASRC=/src /tests/run_tests_nv.sh --conf=/tests/vagrant/host/host.nemesis.conf --group=dbaas.guest
+sudo -E NOVASRC=/src /tests/run_tests_nv.sh --conf=/tests/vagrant/host/host.nemesis.conf --group=host.ovz
