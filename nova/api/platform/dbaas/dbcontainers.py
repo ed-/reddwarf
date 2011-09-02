@@ -382,7 +382,9 @@ class Controller(object):
                 msg = "Volume 'size' needs to be a positive integer value, %s"\
                       " cannot be accepted." % volume_size
                 raise exception.ApiError(msg)
-        except KeyError as e:
+        except (KeyError, ValueError) as e:
+            # KeyError thrown if any of the fields are missing from the dict.
+            # ValueError is thrown if volume_size isn't created properly.
             LOG.error("Create Container Required field(s) - %s" % e)
             raise exception.ApiError("Required element/key - %s " \
                                       "was not specified" % e)
