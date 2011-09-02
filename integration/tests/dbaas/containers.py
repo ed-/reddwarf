@@ -31,7 +31,7 @@ GROUP_STOP="dbaas.guest.shutdown"
 from datetime import datetime
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_true
-from novaclient.exceptions import NotFound
+from novaclient.exceptions import NotFound, ClientException
 from nova import context
 from nova import db
 from nova.api.platform.dbaas.dbcontainers import _dbaas_mapping
@@ -200,6 +200,12 @@ class CreateContainer(unittest.TestCase):
 
     """
 
+    @expect_exception(ClientException)
+    def test_blank_size_create_error(self):
+        dbaas.dbcontainers.create('blank_volume_value',
+                                  container_info.dbaas_flavor_href,
+                                  {'size': ''}, [])
+
     def test_create(self):
         global dbaas
         # give the services some time to start up
@@ -219,7 +225,7 @@ class CreateContainer(unittest.TestCase):
         container_info.id = result.id
 
         self.assertEqual(result.status, _dbaas_mapping[power_state.BUILDING])
-        
+
         # checks to be sure these are not found in the result
         for attr in ['hostId', 'imageRef', 'metadata', 'adminPass', 'uuid',
                      'volumes', 'addresses']:
