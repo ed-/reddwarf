@@ -26,9 +26,9 @@ chmod -w /etc/sudoers
 
 # Restart the nova-guest service
 # Stop and then start to prevent any errors
-service nova-guest stop
+/etc/init.d/nova-guest stop
 wait
-service nova-guest start
+/etc/init.d/nova-guest start
 
 echo "Successfully completed the setup of the Guest Agent"
 
