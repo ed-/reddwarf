@@ -255,7 +255,7 @@ class DBaaSAgent(object):
     def update_status(self):
         """Update the status of the MySQL service"""
         try:
-            out, err = utils.execute("sudo", "service", "mysql", "status")
+            out, err = utils.execute("sudo", "/etc/init.d/mysql", "status")
             instance_id = guest_utils.get_instance_id()
             if err:
                 LOG.error(err)
@@ -420,7 +420,7 @@ class DBaaSPreparer(object):
         mysql_base_dir = "/var/lib/mysql"
         try:
             LOG.debug(_("Restarting mysql..."))
-            utils.execute("sudo", "service", "mysql", "stop")
+            utils.execute("sudo", "/etc/init.d/mysql", "stop")
 
             # Remove the ib_logfile, if not mysql won't start.
             # For some reason wildcards don't seem to work, so
@@ -428,7 +428,7 @@ class DBaaSPreparer(object):
             utils.execute("sudo", "rm", "%s/ib_logfile0" % mysql_base_dir)
             utils.execute("sudo", "rm", "%s/ib_logfile1" % mysql_base_dir)
 
-            utils.execute("sudo", "service", "mysql", "start")
+            utils.execute("sudo", "/etc/init.d/mysql", "start")
         except ProcessExecutionError:
             LOG.error(_("Unable to restart mysql server."))
 
