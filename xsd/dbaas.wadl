@@ -2,75 +2,81 @@
 <!DOCTYPE application [
     <!ENTITY % common  SYSTEM "common.ent">
     %common;
-    
-    
+
+
 ]>
 <application
         xmlns="http://wadl.dev.java.net/2009/02"
         xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	xmlns:xsdxt="http://docs.rackspacecloud.com/xsd-ext/v1.0"
-	xmlns:wadl="http://wadl.dev.java.net/2009/02"
+        xmlns:xsdxt="http://docs.rackspacecloud.com/xsd-ext/v1.0"
+        xmlns:wadl="http://wadl.dev.java.net/2009/02"
         xmlns:dbaas="http://docs.openstack.org/database/api/v1.0">
 
     <grammars>
         <include href="dbaas.xsd" />
     </grammars>
 
-    <resources base="https://localhost:8775">
+    <resources base="https://ord.databases.api.rackspacecloud.com">
         <resource id="versions" path="">
             <method href="#getVersions" />
         </resource>
         <resource id="version" path="{version}">
             <method href="#getVersionInfo" />
-            <resource id="instances" path="instances">
-                <method href="#createInstance" />
-                <method href="#getInstance" />
-                <resource id="instanceDetails" path="detail">
-                    <method href="#getInstanceDetails" />
-                </resource>
-                <resource id="instanceId" path="{instanceId}">
-                    <param name="instanceId" style="template"
-                        type="xsd:string" > 
-                        <doc>The instanceID for the specified database instance.</doc></param>
-                    <method href="#getInstanceById" />
-                    <method href="#deleteInstance" />
-                    <resource id="databases" path="databases">
-                        <method href="#createDatabase" />
-                        <method href="#getDatabases" />
-                        <resource id="databaseName" path="{databaseName}">
-                            <param name="databaseName" style="template"
-                                type="xsd:string" > 
-                                <doc>The name for the specified database.</doc></param>
-                            <method href="#deleteDatabase" />
+
+            <resource id="accountId" path="{accountId}">
+                <param name="accountId" style="template" type="xsd:string">
+                    <doc>The accountID of the specified instance's owner.</doc></param>
+
+                <resource id="instances" path="instances">
+                    <method href="#createInstance" />
+                    <method href="#getInstance" />
+                    <resource id="instanceDetails" path="detail">
+                        <method href="#getInstanceDetails" />
+                    </resource>
+                    <resource id="instanceId" path="{instanceId}">
+                        <param name="instanceId" style="template"
+                            type="xsd:string" >
+                            <doc>The instanceID for the specified database instance.</doc></param>
+                        <method href="#getInstanceById" />
+                        <method href="#deleteInstance" />
+                        <resource id="databases" path="databases">
+                            <method href="#createDatabase" />
+                            <method href="#getDatabases" />
+                            <resource id="databaseName" path="{databaseName}">
+                                <param name="databaseName" style="template"
+                                    type="xsd:string" >
+                                    <doc>The name for the specified database.</doc></param>
+                                <method href="#deleteDatabase" />
+                            </resource>
+                        </resource>
+                        <resource id="users" path="users">
+                            <method href="#createUser" />
+                            <method href="#getUsers" />
+                            <resource id="userId" path="{userId}">
+                                <param name="userId" style="template"
+                                    type="xsd:string" >
+                                    <doc>The userID for the specified user.</doc></param>
+                                <method href="#deleteUser" />
+                            </resource>
+                        </resource>
+                        <resource id="root" path="root">
+                            <method href="#createRoot" />
+                            <method href="#isRootEnabled" />
                         </resource>
                     </resource>
-                    <resource id="users" path="users">
-                        <method href="#createUser" />
-                        <method href="#getUsers" />
-                        <resource id="userId" path="{userId}">
-                            <param name="userId" style="template"
-                                type="xsd:string" > 
-                                <doc>The userID for the specified user.</doc></param>
-                            <method href="#deleteUser" />
-                        </resource>
-                    </resource>
-                    <resource id="root" path="root">
-                        <method href="#createRoot" />
-                        <method href="#isRootEnabled" />
-                    </resource>
                 </resource>
-            </resource>
-            <resource id="flavors" path="flavors">
-                <method href="#getFlavors" />
-                <resource id="flavorDetails" path="detail">
-                    <method href="#getFlavorDetails" />
-                </resource>
-                <resource id="flavorId" path="{flavorId}">
-                    <param name="flavorId" style="template" type="xsd:string" >
-                        <doc>The flavor ID for the specified flavor.</doc></param>
-                    <method href="#getFlavorById" />
+                <resource id="flavors" path="flavors">
+                    <method href="#getFlavors" />
+                    <resource id="flavorDetails" path="detail">
+                        <method href="#getFlavorDetails" />
+                    </resource>
+                    <resource id="flavorId" path="{flavorId}">
+                        <param name="flavorId" style="template" type="xsd:string" >
+                            <doc>The flavor ID for the specified flavor.</doc></param>
+                        <method href="#getFlavorById" />
+                    </resource>
                 </resource>
             </resource>
         </resource>
@@ -87,18 +93,18 @@
             <remark>Reviewer: These tables probably need 4 columns: name; parameter type: e.g. template, query, etc.; data type: string, etc.; required?; description.</remark>
             <para>This operation returns detailed information about the specified version of the API.</para>
         </wadl:doc>
-        
+
         <response status="200">
             <representation mediaType="application/xml" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Version Details responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-version-details-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-version-details-response.xml"/>
                 </doc>
             </representation>
-            
+
             <representation mediaType="application/json" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-version-details-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-version-details-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -110,19 +116,19 @@
         <wadl:doc xml:lang="EN" title="List Versions" xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">
                 Lists information about all versions of the API.
-            </para>                 
+            </para>
             <para>This operation lists information about all versions of the API.</para>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml" >
                  <doc>
                      <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Versions responses:</para>
-                     <xsdxt:code href="../apidocs/src/resources/samples/db-list-versions-response.xml"/>	  
+                     <xsdxt:code href="../apidocs/src/resources/samples/db-list-versions-response.xml"/>
                  </doc>
             </representation>
             <representation mediaType="application/json" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-versions-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-versions-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -132,7 +138,7 @@
 
     <!-- Instance -->
     <method name="POST" id="createInstance">
-    <wadl:doc xml:lang="EN" title="Create Database Instance"  xmlns="http://docbook.org/ns/docbook">    
+    <wadl:doc xml:lang="EN" title="Create Database Instance"  xmlns="http://docbook.org/ns/docbook">
       <para role="shortdesc">Creates a new database instance.</para>
       <para>This operation asynchronously provisions a new database instance. This call requires the user to specify a flavor and a volume size. The service then provisions the instance with the requested flavor and sets up a volume of the specified size, which is the storage for the database instance.</para>
         <note>You can create only one database instance per <command>POST</command> request.</note>
@@ -157,7 +163,7 @@
                       <para>size &ndash; Specifies the volume size in gigabytes (GB). The value specified must be between 1 and 128.</para>
                   </listitem>
               </itemizedlist>
-          </listitem>                
+          </listitem>
       </itemizedlist>
       <remark>Reviewer: other attributes are defined in the json example below, for instance: dbtype and name. These also need to be defined in the list above.</remark>
       <para>Refer to <xref linkend="database_instance_status"/> for a list of possible database instance statuses that may be returned.</para>
@@ -168,7 +174,7 @@
                 <doc>
                     <?hard-pagebreak?>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the Create Database Instance requests and responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-database-instance-request.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-database-instance-request.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json">
@@ -185,7 +191,7 @@
             </representation>
             <representation mediaType="application/json" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-database-instance-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-database-instance-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -194,13 +200,13 @@
     </method>
 
     <method name="DELETE" id="deleteInstance">
-        <wadl:doc xml:lang="EN" title="Delete Database Instance"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Delete Database Instance"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Deletes the specified database instance.</para>
             <para>This operation deletes the specified database instance, including any associated data.</para>
             <para>Refer to <xref linkend="database_instance_status"/> for a list of possible database instance statuses that may be returned.</para>
             <note>This operation does not delete any read slaves.</note>
             <remark>Reviewer: please provide a description of read slaves that I can add to the previous note.</remark>
-            <note>This operation is not allowed when the instance state is either <code>REBUILDING</code> or <code>BUILDING</code>.</note>         
+            <note>This operation is not allowed when the instance state is either <code>REBUILDING</code> or <code>BUILDING</code>.</note>
         </wadl:doc>
         <response status="200" />
     &commonFaults;
@@ -212,7 +218,7 @@
     </method>
 
     <method name="GET" id="getInstance">
-        <wadl:doc xml:lang="EN" title="List All Database Instances"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List All Database Instances"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists the status and summary information for all database instances.</para>
             <para>This operation lists the status and summary information for all database instances.</para>
             <para>Refer to <xref linkend="database_instance_status"/> for a list of possible database instance statuses that may be returned.</para>
@@ -235,11 +241,11 @@
     </method>
 
     <method name="GET" id="getInstanceDetails">
-        <wadl:doc xml:lang="EN" title="List All Database Instances for an Account"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List All Database Instances for an Account"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists the status and details for all database instances for an account.</para>
             <para>This operation lists the status and details for all database instances associated with an account.</para>
             <para>Refer to <xref linkend="database_instance_status"/> for a list of possible database instance statuses that may be returned.</para>
-            <para>The list operations return a DNS-resolvable hostname associated with the database instance instead of an IP address. Since the hostname always resolves to the correct IP address of the database instance, this relieves the user from the task of maintaining the mapping. Note that although the IP address may likely change on resizing, migrating, and so forth, the hostname always resolves to the correct database instance.</para>           
+            <para>The list operations return a DNS-resolvable hostname associated with the database instance instead of an IP address. Since the hostname always resolves to the correct IP address of the database instance, this relieves the user from the task of maintaining the mapping. Note that although the IP address may likely change on resizing, migrating, and so forth, the hostname always resolves to the correct database instance.</para>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml" element="dbaas:DatabaseInstances" >
@@ -260,11 +266,11 @@
     </method>
 
     <method name="GET" id="getInstanceById">
-        <wadl:doc xml:lang="EN" title="List Database Instance Status and Details"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Database Instance Status and Details"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists status and details for a specified database instance or all database instances associated with an account.</para>
             <para>This operation lists the status and details of the specified database instance or, if no database instance is specified, all database instances associated with an account.</para>
             <para>Refer to <xref linkend="database_instance_status"/> for a list of possible database instance statuses that may be returned.</para>
-            <para>The list operations return a DNS-resolvable hostname associated with the database instance instead of an IP address. Since the hostname always resolves to the correct IP address of the database instance, this relieves the user from the task of maintaining the mapping. Note that although the IP address may likely change on resizing, migrating, and so forth, the hostname always resolves to the correct database instance.</para>                 
+            <para>The list operations return a DNS-resolvable hostname associated with the database instance instead of an IP address. Since the hostname always resolves to the correct IP address of the database instance, this relieves the user from the task of maintaining the mapping. Note that although the IP address may likely change on resizing, migrating, and so forth, the hostname always resolves to the correct database instance.</para>
         </wadl:doc>
         <request></request>
         <response status="200">
@@ -288,7 +294,7 @@
 
     <!-- Database -->
     <method name="POST" id="createDatabase">
-        <wadl:doc xml:lang="EN" title="Create Database"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Create Database"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Creates a new database within the specified instance.</para>
             <para>This operation creates a new database within the specified instance.</para>
             <para>The name of the database is a required parameter (xml: <code>Database name</code>, json: <code>name</code>).</para>
@@ -299,55 +305,55 @@
                     <para>Letters (upper and lower cases allowed)</para>
                 </listitem>
                 <listitem>
-                    <para>Numbers</para>     
-                </listitem> 
+                    <para>Numbers</para>
+                </listitem>
                 <listitem>
                     <para>'@', '?', '#', and spaces are allowed, but <emphasis>not</emphasis> at the beginning and end of the database name</para>
                 </listitem>
                 <listitem>
-                    <para>"_" is allowed anywhere in the database name</para>     
-                </listitem> 
+                    <para>"_" is allowed anywhere in the database name</para>
+                </listitem>
                 <listitem>
-                    <para>Characters such as single quotes, periods, double quotes, back quotes, commas, backslashes, forwardslashes, and semicolons are specially <emphasis>not</emphasis> allowed</para>     
+                    <para>Characters such as single quotes, periods, double quotes, back quotes, commas, backslashes, forwardslashes, and semicolons are specially <emphasis>not</emphasis> allowed</para>
                 </listitem>
             </itemizedlist>
-            
+
             <para>The valid characters that can be used in a database user name and password include everything <emphasis>except for</emphasis> the following:</para>
             <itemizedlist spacing="compact">
                 <listitem>
                     <para>Single quotes</para>
                 </listitem>
                 <listitem>
-                    <para>Double quotes</para>     
-                </listitem> 
+                    <para>Double quotes</para>
+                </listitem>
                 <listitem>
                     <para>Back quotes</para>
                 </listitem>
                 <listitem>
-                    <para>Semicolons</para>     
-                </listitem> 
+                    <para>Semicolons</para>
+                </listitem>
                 <listitem>
-                    <para>Commas</para>     
+                    <para>Commas</para>
                 </listitem>
                 <listitem>
                     <para>Backslashes</para>
                 </listitem>
                 <listitem>
-                    <para>Forwardslashes</para>     
-                </listitem> 
+                    <para>Forwardslashes</para>
+                </listitem>
                 <listitem>
-                    <para>Spaces at the front or end of the user name or password</para>     
+                    <para>Spaces at the front or end of the user name or password</para>
                 </listitem>
             </itemizedlist>
-            
+
             <para>Length restrictions for database name, user name, and password are:</para>
             <itemizedlist spacing="compact">
                 <listitem>
                     <para>Database-name maximum length &ndash; 64 characters</para>
                 </listitem>
                 <listitem>
-                    <para>User name maximum length &ndash; 16 characters</para>     
-                </listitem> 
+                    <para>User name maximum length &ndash; 16 characters</para>
+                </listitem>
                 <listitem>
                     <para>Password maximum length &ndash; unlimited (no restrictions)</para>
                 </listitem>
@@ -373,12 +379,12 @@
     &getFaults;
     </method>
 
-        
+
     <method name="GET" id="getDatabases">
-        <wadl:doc xml:lang="EN" title="List Databases for Instance"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Databases for Instance"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists databases for the specified instance.</para>
             <para>This operation lists the databases for the specified instance.</para>
-            <note>This operation returns only the user-defined databases, not the system databases.</note>                  
+            <note>This operation returns only the user-defined databases, not the system databases.</note>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml"
@@ -400,9 +406,9 @@
     </method>
 
     <method name="DELETE" id="deleteDatabase">
-        <wadl:doc xml:lang="EN" title="Delete Database"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Delete Database"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Deletes the specified database.</para>
-            <para>This operation deletes the requested database within the specified database instance. Note that all data associated with the database is also deleted.</para>   
+            <para>This operation deletes the requested database within the specified database instance. Note that all data associated with the database is also deleted.</para>
         </wadl:doc>
         <response status="202" />
     &commonFaults;
@@ -411,26 +417,26 @@
 
     <!-- User -->
     <method name="POST" id="createUser">
-        <wadl:doc xml:lang="EN" title="Create User"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Create User"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Creates a user for the specified database instance.</para>
             <para>This operation asynchronously provisions a new user for the specified database instance based on the configuration defined in the request object. Once the request is validated and progress has started on the provisioning process, a response object is returned. This object contains a unique identifier and the status of the request.</para>
             <remark>Writer: please add the following note back into the doc once the List User Details call is added back into the API: Using the identifier, the caller can check on the progress of the operation by performing a GET on users/userId (for more details on this operation see the "List User Details" section of this document).</remark>
-            <para>If the corresponding request cannot be fulfilled due to insufficient or invalid data, an HTTP 400 "Bad Request" error response is returned with information regarding the nature of the failure. Failures in the validation process are non-recoverable and require the caller to correct the cause of the failure and POST the request again.</para>        
+            <para>If the corresponding request cannot be fulfilled due to insufficient or invalid data, an HTTP 400 "Bad Request" error response is returned with information regarding the nature of the failure. Failures in the validation process are non-recoverable and require the caller to correct the cause of the failure and POST the request again.</para>
             <note>User name and password must be specified in the request, and database name is optional.</note>
-            <para>Refer to the Create Database API call in <xref linkend="POST_createDatabase_v1.0_instances__instanceId__databases_databases"/> for information about restrictions for the user name and database name.</para>        
+            <para>Refer to the Create Database API call in <xref linkend="POST_createDatabase_v1.0_instances__instanceId__databases_databases"/> for information about restrictions for the user name and database name.</para>
         </wadl:doc>
         <request>
             <representation mediaType="application/xml"
                 element="dbaas:Users" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the Create User requests:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-user-request.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-user-request.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json" >
                 <doc>
                     <?hard-pagebreak?>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-user-request.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-create-user-request.json"/>
                 </doc>
             </representation>
         </request>
@@ -441,25 +447,25 @@
 
 
     <method name="GET" id="getUsers">
-        <wadl:doc xml:lang="EN" title="List Users in Database Instance"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Users in Database Instance"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists the users in the specified database instance.</para>
-            <para>This operation lists the users in the specified database instance. </para>   
+            <para>This operation lists the users in the specified database instance. </para>
             <note>This operation does not return the system users. It returns the "root" user only if "root" user has been enabled.</note>
-       
+
             <para>The following notes apply to MySQL users:</para>
             <itemizedlist spacing="compact">
                 <listitem>
                     <para>User names can be up to 16 characters long.</para>
                 </listitem>
                 <listitem>
-                    <para>When you create accounts with INSERT, you must use FLUSH PRIVILEGES to tell the server to reload the grant tables.</para>     
-                </listitem> 
+                    <para>When you create accounts with INSERT, you must use FLUSH PRIVILEGES to tell the server to reload the grant tables.</para>
+                </listitem>
                 <listitem>
                     <para>For additional information, refer to: <link
                         xlink:href="http://dev.mysql.com/doc/refman/5.1/en/user-account-management.html"
                         >http://http://dev.mysql.com/doc/refman/5.1/en/user-account-management.html</link></para>
                 </listitem>
-            </itemizedlist>              
+            </itemizedlist>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml"
@@ -467,13 +473,13 @@
                 <doc>
                     <?hard-pagebreak?>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Users in Database Instance responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-users-in-database-instance-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-users-in-database-instance-response.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json"
                 element="dbaas:Users" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-users-in-database-instance-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-users-in-database-instance-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -484,7 +490,7 @@
     <method name="DELETE" id="deleteUser">
         <wadl:doc xml:lang="EN" title="Delete User"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Deletes the specified user for the specified database instance.</para>
-            <para>This operation deletes the specified user for the specified database instance.</para>        
+            <para>This operation deletes the specified user for the specified database instance.</para>
         </wadl:doc>
         <response status="202" />
     &commonFaults;
@@ -493,7 +499,7 @@
 
     <!-- Root -->
     <method name="POST" id="createRoot">
-        <wadl:doc xml:lang="EN" title="Enable Root User"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Enable Root User"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Enables the root user for the specified database instance and returns the root password.</para>
             <para>This operation enables login from any host for the root user and provides the user with a generated root password.</para>
             <note>Enabling root user access to your cloud database can cause detrimental effects for your instance and unpredictable behavior for API operations. When you enable the root user, you accept the possibility that we will not be able to support your database instance. While enabling root does not prevent us from a “best effort” approach to helping you if something goes wrong with your instance, we cannot ensure that we will be able to assist you if you change core MySQL settings. These changes can be (but are not limited to) turning off binlogs, removing users that we use to access your instance, and so forth.</note>
@@ -503,38 +509,38 @@
                 element="dbaas:User">
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the Enable Root User responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-enable-root-user-in-database-instance-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-enable-root-user-in-database-instance-response.xml"/>
                 </doc>
             </representation>
-            
+
             <representation mediaType="application/json"
                 element="dbaas:User">
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-enable-root-user-in-database-instance-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-enable-root-user-in-database-instance-response.json"/>
                 </doc>
-            </representation>    
+            </representation>
         </response>
     &commonFaults;
     &getFaults;
     </method>
 
     <method name="GET" id="isRootEnabled">
-        <wadl:doc xml:lang="EN" title="Check Root User Access"  xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="Check Root User Access"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Returns true if root user is enabled for the specified database instance or false otherwise.</para>
-            <para>This operation checks an active specified database instance to see if root access is enabled. It returns True if root user is enabled for the specified database instance or False otherwise.</para>           
+            <para>This operation checks an active specified database instance to see if root access is enabled. It returns True if root user is enabled for the specified database instance or False otherwise.</para>
         </wadl:doc>
         <response status="200">
             <representation mediaType="application/xml"
                 element="dbaas:RootEnabled" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the Check Root User Access responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-check-root-user-access-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-check-root-user-access-response.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json"
                 element="dbaas:RootEnabled" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-check-root-user-access-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-check-root-user-access-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -544,7 +550,7 @@
 
     <!-- Flavor -->
     <method name="GET" id="getFlavors">
-        <wadl:doc xml:lang="EN" title="List Flavors" xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Flavors" xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists available flavors.</para>
             <para>This operation lists all available flavors.</para>
             <para>This resource is identical to the flavors found in the OpenStack Nova API, but without the disk property.</para>
@@ -555,13 +561,13 @@
                 element="dbaas:Flavors" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Flavors responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-response.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json"
                 element="dbaas:Flavors" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -570,7 +576,7 @@
     </method>
 
     <method name="GET" id="getFlavorDetails">
-        <wadl:doc xml:lang="EN" title="List Flavors Details" xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Flavors Details" xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists all details for all available flavors.</para>
             <para>This operation lists all available flavors with details of the RAM.</para>
             <para>This resource is identical to the flavors found in the OpenStack Nova API, but without the disk property.</para>
@@ -580,13 +586,13 @@
                 element="dbaas:Flavors" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Flavors Details responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json"
                 element="dbaas:Flavors" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.json"/>
                 </doc>
             </representation>
         </response>
@@ -595,7 +601,7 @@
     </method>
 
     <method name="GET" id="getFlavorById">
-        <wadl:doc xml:lang="EN" title="List Flavor By ID" xmlns="http://docbook.org/ns/docbook">    
+        <wadl:doc xml:lang="EN" title="List Flavor By ID" xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Lists all flavor information about the specified flavor ID.</para>
             <para>This operation lists all information for the specified flavor ID with details of the RAM.</para>
             <para>This resource is identical to the flavors found in the OpenStack Nova API, but without the disk property.</para>
@@ -605,13 +611,13 @@
                 element="dbaas:Flavor" >
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The following examples show the List Flavor By ID responses:</para>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.xml"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.xml"/>
                 </doc>
             </representation>
             <representation mediaType="application/json"
                 element="dbaas:Flavor" >
                 <doc>
-                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.json"/>	  
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-list-flavors-details-response.json"/>
                 </doc>
             </representation>
         </response>
