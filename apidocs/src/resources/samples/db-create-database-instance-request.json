@@ -10,7 +10,7 @@ Content-Length: 121
 {
     "instance": {
     "name": "myrackinstance",
-        "flavorRef": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1",
+        "flavor": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1",
         "databases": [
             {
                 "name": "sampledb",

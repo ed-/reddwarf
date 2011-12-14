@@ -326,7 +326,7 @@
             set, and <code>utf8_general_ci</code> collation, using the
             tiny flavor and volume size of 2 gigabytes (GB).</para>
         <para>Notice that the request specifies the flavor reference
-                (<code>flavorRef</code>) to the tiny flavor (id 1)
+                (<code>flavor</code>) to the tiny flavor (id 1)
             that was returned by the List Flavors Details call:
                 <code>"https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1".</code></para>
         <para>The following examples show the cURL requests for Create
@@ -337,7 +337,7 @@
 '&lt;?xml version="1.0" ?> \
 &lt;instance xmlns="http://docs.openstack.org/database/api/v1.0" \
     name="myrackinstance" \
-    flavorRef= \
+    flavor= \
       "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1"> \
     &lt;databases> \
         &lt;database name="sampledb" character_set="utf8" \
@@ -358,7 +358,7 @@
 '{ \
     "instance": { \
         "name": "myrackinstance", \
-        "flavorRef": \
+        "flavor": \
 "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1", \
         "databases": [ \
             { \
