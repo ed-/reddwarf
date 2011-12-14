@@ -1,21 +1,41 @@
 HTTP/1.1 200 OK
 Content-Type: application/xml
-Content-Length: 663
-Date: Mon, 28 Nov 2011 18:31:03 GMT
+Content-Length: 1017
+Date: Wed, 12 Dec 2012 12:30:00 GMT
 
 <?xml version="1.0" ?>
-<instances xmlns="http://docs.openstack.org/database/api/v1.0">
-    <instance created="2011-11-17T20:33:59Z" hostname="1-instance-1" id="c495966d-289a-4b02-a453-695c963eba45" name="1" status="ACTIVE" updated="2011-11-17T20:35:43Z">
-        <links>
-            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/instances/c495966d-289a-4b02-a453-695c963eba45" rel="self"/>
-            <link href="https://ord.databases.api.rackspacecloud.com/instances/c495966d-289a-4b02-a453-695c963eba45" rel="bookmark"/>
-        </links>
-        <volume size="2"/>
+<instance account_id="admin" created="2012-12-12T12:30:00Z" host="host" hostname="1-instance-1" id="c495966d-289a-4b02-a453-695c963eba45" name="1" root_enabled_at="Never" root_enabled_by="Nobody" server_state_description="active" status="ACTIVE" updated="2012-12-12T12:30:00Z" xmlns="http://docs.openstack.org/database/api/v1.0">
+        <volume description="Volume ID: 1 assigned to Instance: 9fb8d18a-ab7b-4ce8-89c4-111d0b9d7e92" id="1" name="WHEELGATOR" size="2"/>
+        <guest_status created_at="2011-12-14 20:28:50" deleted="False" deleted_at="None" instance_id="1" state="1" state_description="running" updated_at="2011-12-14 20:49:14"/>
+        <users/>
+        <databases/>
         <flavor id="1">
-            <links>
-                <link href="https://ord.databases.api.rackspacecloud.com/v1.0/flavors/1" rel="self"/>
-                <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
-            </links>
+                <links>
+                        <link href="http://ord.databases.api.rackspacecloud.com/v1.0/dbaas/flavors/1" rel="self"/>
+                        <link href="http://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+                </links>
         </flavor>
-    </instance>
-</instances>
+        <addresses>
+                <infranet>
+                        <item>
+                                <version>
+                                        4
+                                </version>
+                                <addr>
+                                        10.0.4.16
+                                </addr>
+                        </item>
+                </infranet>
+                <usernet>
+                        <item>
+                                <version>
+                                        4
+                                </version>
+                                <addr>
+                                        10.0.2.16
+                                </addr>
+                        </item>
+                </usernet>
+        </addresses>
+</instance>
+
