@@ -36,6 +36,7 @@ from reddwarf import exception
 from reddwarf import volume
 from reddwarf.api import common
 from reddwarf.api import deserializer
+from reddwarf.api.status import InstanceStatusLookup
 from reddwarf.api.views import instances
 from reddwarf.db import api as dbapi
 from reddwarf.guest import api as guest_api
@@ -158,8 +159,8 @@ class Controller(object):
             server['status'] = nova_common.status_from_state(state)
 
         id_list = [server['id'] for server in server_list]
-        guest_state_mapping = self.get_guest_state_mapping(id_list)
-        instances = [self.view.build_index(server, req, guest_state_mapping)
+        status_lookup = InstanceStatusLookup(id_list)
+        instances = [self.view.build_index(server, req, status_lookup)
                         for server in server_list]
         return {'instances': instances}
 
@@ -168,8 +169,8 @@ class Controller(object):
         LOG.debug("%s - %s", req.environ, req.body)
         server_list = self.server_controller.detail(req)['servers']
         id_list = [server['id'] for server in server_list]
-        guest_state_mapping = self.get_guest_state_mapping(id_list)
-        instances = [self.view.build_detail(server, req, guest_state_mapping)
+        status_lookup = InstanceStatusLookup(id_list)
+        instances = [self.view.build_detail(server, req, status_lookup)
                         for server in server_list]
         return {'instances': instances}
 
@@ -184,15 +185,14 @@ class Controller(object):
         context = req.environ['nova.context']
         server = server_response['server']
 
-        guest_state = self.get_guest_state_mapping([server['id']])
+        status_lookup = InstanceStatusLookup([server['id']])
         databases = None
         root_enabled = None
-        if guest_state:
-            databases, root_enabled = self._get_guest_info(context, server['id'],
-                                                      guest_state[server['id']])
+        if status_lookup.get_status_from_server(server).is_sql_running:
+            databases, root_enabled = self._get_guest_info(context, server['id'])
         instance = self.view.build_single(server,
                                           req,
-                                          guest_state,
+                                          status_lookup,
                                           databases=databases,
                                           root_enabled=root_enabled)
         LOG.debug("instance - %s" % instance)
@@ -269,23 +269,17 @@ class Controller(object):
         server_req_body = {'server':server}
         server_resp = self._try_create_server(req, server_req_body)
         instance_id = str(server_resp['server']['uuid'])
-        local_id = str(server_resp['server']['id'])
-        dbapi.guest_status_create(local_id)
+        local_id = server_resp['server']['id']
+        dbapi.guest_status_create(str(local_id))
 
-        guest_state = self.get_guest_state_mapping([local_id])
+        status_lookup = InstanceStatusLookup([local_id])
         instance = self.view.build_single(server_resp['server'], req,
-                                          guest_state, create=True)
+                                          status_lookup, create=True)
 
         # add the volume information to response
         LOG.debug("adding the volume information to the response...")
         instance['volume'] = {'size': volume_ref['size']}
         return { 'instance': instance }
-
-    @staticmethod
-    def get_guest_state_mapping(id_list):
-        """Returns a dictionary of guest statuses keyed by guest ids."""
-        results = dbapi.guest_status_get_list(id_list)
-        return dict([(r.instance_id, r.state) for r in results])
 
     def create_volume(self, context, body):
         """Creates the volume for the instance and returns its ID."""
@@ -384,24 +378,21 @@ class Controller(object):
             self.compute_api.trigger_security_group_rules_refresh(context,
                                                           security_group['id'])
 
-    def _get_guest_info(self, context, id, state):
+    def _get_guest_info(self, context, id):
         """Get the list of databases on a instance"""
-        running = common.dbaas_mapping[power_state.RUNNING]
-        if common.dbaas_mapping.get(state, None) == running:
-            try:
-                result = self.guest_api.list_databases(context, id)
-                LOG.debug("LIST DATABASES RESULT - %s", str(result))
-                databases = [{'name': db['_name'],
-                             'collate': db['_collate'],
-                             'character_set': db['_character_set']}
-                             for db in result]
-                root_enabled = self.guest_api.is_root_enabled(context, id)
-                return databases, root_enabled
-            except Exception as err:
-                LOG.error(err)
-                LOG.error("guest not responding on instance %s" % id)
-        #TODO(cp16net) we have hidden the actual exception by returning [],None
-        return [], None
+        try:
+            result = self.guest_api.list_databases(context, id)
+            LOG.debug("LIST DATABASES RESULT - %s", str(result))
+            databases = [{'name': db['_name'],
+                         'collate': db['_collate'],
+                         'character_set': db['_character_set']}
+                         for db in result]
+            root_enabled = self.guest_api.is_root_enabled(context, id)
+            return databases, root_enabled
+        except Exception as err:
+            LOG.error(err)
+            LOG.error("guest not responding on instance %s" % id)
+            return None, None
 
     @staticmethod
     def _validate(body):

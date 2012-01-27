@@ -87,8 +87,9 @@ def guest_status_get_list(instance_ids, session=None):
     """
     if not session:
         session = get_session()
+    ids = [str(id) for id in instance_ids]
     result = session.query(models.GuestStatus).\
-                         filter(models.GuestStatus.instance_id.in_(instance_ids)).\
+                         filter(models.GuestStatus.instance_id.in_(ids)).\
                          filter_by(deleted=False)
     if not result:
         raise nova_exception.InstanceNotFound(instance_id=instance_ids)
@@ -358,7 +359,7 @@ def localid_from_uuid(uuid):
         result = session.query(Instance).filter_by(uuid=uuid).one()
     except NoResultFound:
         LOG.debug("No such instance found.")
-        return None
+        raise exception.NotFound()
     return result['id']
 
 

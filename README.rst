@@ -31,7 +31,7 @@ enabled in your systems BIOS to get virtualbox running with ANY 64b image.
     [nix:~]$ mkdir ~/dev
     [nix:~]$ cd ~/dev
 
-#. (Requried) Download the openvz glance image from::
+#. (Required) Download the openvz glance image from::
 
     [nix:~/dev]$ mkdir ~/dev/glanceimg
     [nix:~/dev]$ cd ~/dev/glanceimg

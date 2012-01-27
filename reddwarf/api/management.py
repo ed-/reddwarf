@@ -25,6 +25,7 @@ from nova.compute import power_state
 from reddwarf import exception
 from reddwarf import volume
 from reddwarf.api import common
+from reddwarf.api.status import InstanceStatusLookup
 from reddwarf.api.views import instances
 from reddwarf.db import api as dbapi
 from reddwarf.guest import api as guest
@@ -128,24 +129,16 @@ class Controller(object):
             LOG.error("Could not find an instance with id %s" % id)
             raise exception.NotFound("No instance with id %s" % id)
 
-        guest_state = None
-        try:
-            guest_state = dbapi.guest_status_get(instance_id)
-        except exception.NotFound:
-            LOG.error("Could not find the guest status for instance %s" % id)
-        status = None
-        status_dict = {}
-        if guest_state:
-            status = guest_state
-            status_dict = {instance_id: guest_state.state}
-
+        status_lookup = InstanceStatusLookup([instance_id])
         instance = self.instance_view.build_mgmt_single(server,
                                                         instance_ref,
                                                         req,
-                                                        status_dict)
+                                                        status_lookup)
         try:
+            status = status_lookup.get_status_from_server(server)
             instance = self._get_guest_info(context, instance_id, status,
                                             instance)
+
         except Exception as err:
             msg = "Unable to retrieve information from the guest"
             LOG.error(err)
@@ -201,7 +194,7 @@ class Controller(object):
         """Get all the guest details and add it to the response"""
         dbs = None
         users = None
-        if status and status.state == power_state.RUNNING:
+        if status.is_sql_running:
             db_list = self.guest_api.list_databases(context, id)
 
             LOG.debug("DBS: %r" % db_list)
