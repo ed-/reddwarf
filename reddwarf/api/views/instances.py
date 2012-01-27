@@ -40,12 +40,12 @@ def _base_url(req):
 class ViewBuilder(object):
     """Views for an instance"""
 
-    def _build_basic(self, server, req, guest_states=None):
+    def _build_basic(self, server, req, status_lookup):
         """Build the very basic information for an instance"""
         instance = {}
         instance['id'] = server['uuid']
         instance['name'] = server['name']
-        instance['status'] = self.get_instance_status(server, guest_states)
+        instance['status'] = status_lookup.get_status_from_server(server).status
         instance['links'] = self._build_links(req, instance)
         return instance
 
@@ -86,22 +86,22 @@ class ViewBuilder(object):
         ]
         return links
 
-    def build_index(self, server, req, guest_states):
+    def build_index(self, server, req, status_lookup):
         """Build the response for an instance index call"""
-        return self._build_basic(server, req, guest_states)
+        return self._build_basic(server, req, status_lookup)
 
-    def build_detail(self, server, req, guest_states):
+    def build_detail(self, server, req, status_lookup):
         """Build the response for an instance detail call"""
-        instance = self._build_basic(server, req, guest_states)
+        instance = self._build_basic(server, req, status_lookup)
         instance = self._build_detail(server, req, instance)
         return instance
 
-    def build_single(self, server, req, guest_states, databases=None,
+    def build_single(self, server, req, status_lookup, databases=None,
                      root_enabled=False, create=False):
         """
         Given a server (obtained from the servers API) returns an instance.
         """
-        instance = self._build_basic(server, req, guest_states)
+        instance = self._build_basic(server, req, status_lookup)
         instance = self._build_detail(server, req, instance)
         if not create:
             # Add Database and root_enabled
@@ -127,28 +127,6 @@ class ViewBuilder(object):
                             error_msg)
         return {'size': volume_dict['size']}
 
-    @staticmethod
-    def get_instance_status(server, guest_states):
-        """Figures out what the instance status should be.
-
-        First looks at the server status, then to a dictionary mapping guest
-        IDs to their states.
-
-        """
-        if server['status'] in ['ERROR', 'REBOOT']:
-            return server['status']
-        else:
-            try:
-                state = guest_states[server['id']]
-                if state == power_state.PAUSED:
-                    return "REBOOT"
-            except (KeyError, InstanceNotFound):
-                # we set the state to shutdown if not found
-                state = power_state.SHUTDOWN
-            # The guest state is set to PAUSED before reboot. When it wakes
-            # up, it will change the state to something else.
-            return common.dbaas_mapping.get(state, None)
-
 
 class MgmtViewBuilder(ViewBuilder):
     """Management views for an instance"""
@@ -156,9 +134,9 @@ class MgmtViewBuilder(ViewBuilder):
     def __init__(self):
         super(MgmtViewBuilder, self).__init__()
 
-    def build_mgmt_single(self, server, instance_ref, req, guest_states):
+    def build_mgmt_single(self, server, instance_ref, req, status_lookup):
         """Build out the management view for a single instance"""
-        instance = self._build_basic(server, req, guest_states)
+        instance = self._build_basic(server, req, status_lookup)
         instance = self._build_detail(server, req, instance)
         instance = self._build_server_details(server, instance)
         instance = self._build_compute_api_details(instance_ref, instance)
@@ -167,7 +145,7 @@ class MgmtViewBuilder(ViewBuilder):
     def build_guest_info(self, instance, status=None, dbs=None, users=None,
                          root_enabled=None):
         """Build out all possible information for a guest"""
-        instance['guest_status'] = self._build_guest_status(status)
+        instance['guest_status'] = status.get_guest_status()
         instance['databases'] = dbs
         instance['users'] = users
         root_history = self.build_root_history(instance['id'],
@@ -203,20 +181,6 @@ class MgmtViewBuilder(ViewBuilder):
         instance['host'] = instance_ref['host']
         instance['account_id'] = instance_ref['user_id']
         return instance
-
-    @staticmethod
-    def _build_guest_status(status):
-        """Build out the guest status information"""
-        guest_status = {}
-        if status is not None:
-            guest_status['created_at'] = status.created_at
-            guest_status['deleted'] = status.deleted
-            guest_status['deleted_at'] = status.deleted_at
-            guest_status['instance_id'] = status.instance_id
-            guest_status['state'] = status.state
-            guest_status['state_description'] = status.state_description
-            guest_status['updated_at'] = status.updated_at
-        return guest_status
 
     @staticmethod
     def build_volume(server):
