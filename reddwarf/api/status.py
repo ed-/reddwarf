@@ -21,6 +21,7 @@ from nova.compute import power_state
 from nova.exception import InstanceNotFound
 
 from reddwarf.db import api as dbapi
+from reddwarf.exception import NotFound
 from reddwarf.guest.db import models
 
 LOG = logging.getLogger('reddwarf.api.status')
@@ -67,13 +68,13 @@ class InstanceStatus(object):
         try:
             result = dbapi.guest_status_get(instance.id).state
             return result
-        except InstanceNotFound:
+        except NotFound:
             pass
         try:
             local_id = dbapi.localid_from_uuid(instance.id)
             result = dbapi.guest_status_get(local_id).state
             return result
-        except InstanceNotFound:
+        except NotFound:
             return None
 
     @property

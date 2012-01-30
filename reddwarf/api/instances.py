@@ -399,7 +399,6 @@ class Controller(object):
         """Get the list of databases on a instance"""
         try:
             result = self.guest_api.list_databases(context, id)
-            LOG.debug("LIST DATABASES RESULT - %s", str(result))
             databases = [{'name': db['_name'],
                          'collate': db['_collate'],
                          'character_set': db['_character_set']}
