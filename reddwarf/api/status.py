@@ -68,13 +68,13 @@ class InstanceStatus(object):
         try:
             result = dbapi.guest_status_get(instance.id).state
             return result
-        except NotFound:
+        except InstanceNotFound:
             pass
         try:
             local_id = dbapi.localid_from_uuid(instance.id)
             result = dbapi.guest_status_get(local_id).state
             return result
-        except NotFound:
+        except InstanceNotFound:
             return None
 
     @property
@@ -116,7 +116,7 @@ class InstanceStatusLookup(object):
     def get_status_from_server(self, server):
         # We're expecting the server dictionary as returned by the servers API.
         if server['id'] not in self.local_ids:
-            raise InstanceNotFound(instance_id=server['id'])
+            raise NotFound(instance_id=server['id'])
         guest_status = self.guest_status_mapping.get(server['id'])
         guest_state = None
         if guest_status is not None:
