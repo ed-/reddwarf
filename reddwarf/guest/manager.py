@@ -79,10 +79,6 @@ class GuestManager(manager.Manager):
             LOG.error("Method %s not found for driver %s", status_method,
                       self.driver)
 
-    def upgrade(self, context):
-        """Upgrade the guest agent and restart the agent"""
-        LOG.debug(_("Self upgrade of guest agent issued"))
-
     def __getattr__(self, key):
         """Converts all method calls and direct it at the driver"""
         return functools.partial(self._mapper, key)

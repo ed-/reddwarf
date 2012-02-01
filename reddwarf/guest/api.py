@@ -134,9 +134,3 @@ class API(base.Base):
                  {"method": "restart",
                   "args": {}
                  })
-
-    def upgrade(self, context, id):
-        """Make an asynchronous call to self upgrade the guest agent"""
-        topic = self._get_routing_key(context, id)
-        LOG.debug("Sending an upgrade call to nova-guest %s", topic)
-        reddwarf_rpc.cast_with_consumer(context, topic, {"method": "upgrade"})

@@ -30,7 +30,6 @@ from reddwarf.api import databases
 from reddwarf.api import diagnostics
 from reddwarf.api import images
 from reddwarf.api import instances
-from reddwarf.api import guests
 from reddwarf.api import hosts
 from reddwarf.api import management
 from reddwarf.api import root
@@ -102,12 +101,6 @@ class APIRouter(wsgi.Router):
         instance_members = {'action': 'POST'}
         if FLAGS.allow_admin_api:
             LOG.debug(_("Including admin operations in API."))
-            with mapper.submapper(path_prefix="/{project_id}/mgmt/guests",
-                                  controller=guests.create_resource()) as m:
-                m.connect("/upgradeall", action="upgradeall",
-                          conditions=dict(method=["POST"]))
-                m.connect("/{id}/upgrade", action="upgrade",
-                          conditions=dict(method=["POST"]))
 
             mapper.resource("image", "images",
                             controller=images.create_resource(),
