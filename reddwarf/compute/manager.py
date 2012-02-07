@@ -20,6 +20,7 @@ import json
 from nova import flags
 from nova import log as logging
 from nova import exception as nova_exception
+
 from nova.compute import task_states
 from nova.compute import vm_states
 from nova.compute import power_state
@@ -59,6 +60,12 @@ VALID_ABORT_STATES = [
 
 def publisher_id(host=None):
     return notifier.publisher_id("reddwarf-compute", host)
+
+def notify_of_failure(context, event_type, exception, audit_msg, err_values):
+    """Logs message / sends notification that an instance has failed."""
+    LOG.error(exception)
+    LOG.audit(audit_msg % err_values, context=self.context)
+    notifier.notify(publisher_id(), event_type, notifier.ERROR, err_values)
 
 
 class ReddwarfInstanceMetaData(object):
@@ -210,11 +217,10 @@ class ReddwarfInstanceInitializer(object):
 
     def _notify_of_failure(self, event_type, exception, audit_msg):
         """Logs message / sends notification that an instance has failed."""
-        LOG.error(exception)
         err_values = { 'instance_id':self.instance_id,
                        'volume_id':self.volume_id }
-        LOG.audit(audit_msg % err_values, context=self.context)
-        notifier.notify(publisher_id(), event_type, notifier.ERROR, err_values)
+        notify_of_failure(self.context, event_type, exception, audit_msg,
+                          err_values)
 
     def _set_instance_status_to_fail(self):
         """Sets the instance to FAIL."""
@@ -242,6 +248,44 @@ class ReddwarfComputeManager(ComputeManager):
         super(ReddwarfComputeManager, self).__init__(*args, **kwargs)
         self.guest_api = guest.API()
         self.compute_manager = super(ReddwarfComputeManager, self)
+
+    def resize_in_place(self, context, instance_id, new_instance_type_id):
+        """Changes the size of instance.
+
+        First, the MySQL app is stopped. the driver is asked to resize the
+        compute instance.  If it fails, but the instance itself can  be rescued,
+        the driver is asked to reset the size of the instance.
+        Finally the MySQL app is restarted with either the new size or (if the
+        instance resize failed) the old size, and the status is set back to
+        active.
+
+        If the guest or driver raise an issue the status is set to ERROR and
+        an ops notification message is sent.
+        """
+        instance_ref = self.db.instance_get(context, instance_id)
+        actual_instance_type_id = instance_ref['instance_type_id']
+        updated_memory_size = None
+        try:
+            self.guest_api.stop_mysql(instance_id)
+            if self.driver.resize_in_place(instance_ref, new_instance_type_id):
+                actual_instance_type_id = new_instance_type_id
+                inst_type = instance_ref.get_instance_type(new_instance_type_id)
+                updated_memory_size = inst_type['memory_mb']
+            else:
+                self.driver.reset_to_current_size(instance_ref)
+            self.guest_api.start_mysql(instance_id, updated_memory_size)
+        except Exception as e:
+            err_values = { 'instance_id':self.instance_id,
+                           'new_instance_type_id':new_instance_type_id}
+            notify_of_failure(context, e,
+                              event_type='reddwarf.instance.resize_on_host',
+                              audit_msg=_("Aborting instance %(instance_id)d "
+                                          "resize operation."),
+                              err_values=err_values)
+            raise
+        self.update(context, instance_id,
+                    instance_type_id=actual_instance_type_id,
+                    vm_state=vm_states.ACTIVE, task_state=None)
 
     def restart(self, context, instance_id):
         """Call agent to restart MySQL."""

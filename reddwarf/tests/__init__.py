@@ -36,3 +36,7 @@ def setup():
         os.remove(clean_db)
     nova_migration.db_sync()
     shutil.copy(database_file, clean_db)
+
+    from reddwarf.tests import util
+    util.reset_database()
+    util.db_sync()
