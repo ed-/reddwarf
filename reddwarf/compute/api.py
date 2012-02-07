@@ -36,6 +36,29 @@ class API(nova_compute_api.API):
     def __init__(self, *args, **kwargs):
         super(API, self).__init__(*args, **kwargs)
 
+    @scheduler_api.reroute_compute("resize_in_place")
+    def resize_in_place(self, context, instance_id, new_instance_type_id):
+        """Resize an instance on its host."""
+        instance_ref = self._get_instance(context, instance_id,
+                                          'resize_in_place')
+        def get_memory_mb(instance_type_id):
+            inst_type = instance_types.get_instance_type(instance_type_id)
+            return inst_type['memory_mb']
+
+        old_size = get_memory_mb(instance_ref['instance_type_id'])
+        new_size = get_memory_mb(new_instance_type_id)
+        diff_size = new_size - old_size
+        if diff_size < 0:
+            raise exception.CannotResizeToSmallerSize()
+        host = instance_ref['host']
+        host_mem_used = dbapi.instance_get_memory_sum_by_host(context, host)
+        if host_mem_used + diff_size > FLAGS.max_instance_memory_mb:
+            raise reddwarf_exception.OutOfInstanceMemory()
+        self.update(context, instance_id, vm_state=vm_states.RESIZING)
+        params={'new_instance_type_id': new_instance_type_id}
+        self._cast_compute_message("resize_in_place", context, instance_id,
+                                   params=params)
+
     def resize_volume(self, context, volume_id):
         """
         Rescan and resize the attached volume filesystem once the actual volume

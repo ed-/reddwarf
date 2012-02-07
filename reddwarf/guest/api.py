@@ -135,6 +135,22 @@ class API(base.Base):
                   "args": {}
                  })
 
+    def start_mysql_with_conf_changes(self, context, id, updated_memory_size):
+        """Start the MySQL server."""
+        LOG.debug(_("Sending the call to start MySQL on the Guest."))
+        rpc.call(context, self._get_routing_key(context, id),
+                {"method": "start_mysql_with_conf_changes",
+                 "args": {'updated_memory_size':updated_memory_size}
+                })
+
+    def stop_mysql(self, context, id):
+        """Stop the MySQL server."""
+        LOG.debug(_("Sending the call to stop MySQL on the Guest."))
+        rpc.call(context, self._get_routing_key(context, id),
+                {"method": "stop_mysql",
+                 "args": {}
+                })
+
     def upgrade(self, context, id):
         """Make an asynchronous call to self upgrade the guest agent"""
         topic = self._get_routing_key(context, id)
