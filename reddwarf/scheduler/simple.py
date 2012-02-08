@@ -203,3 +203,24 @@ class UnforgivingMemoryScheduler(MemoryScheduler):
                             notifier.ERROR,
                             {"requested_instance_memory_mb": memory_mb})
             raise OutOfInstanceMemory(instance_memory_mb=memory_mb)
+
+#    def schedule_resize_in_place(self, topic, instance_id, instance_type_id):
+#        """
+#        Schedule to resize the instance type (flavor id)
+#
+#        Workflow:
+#        look up host
+#        check for space on host
+#        if not enough space:
+#            call compute api update status to ACTIVE
+#        we have space to resize:
+#            call compute api resize_on_host
+#
+#        """
+#        LOG.debug("reddwarf unforgiving memory scheduler")
+#        instance_ref = db.instance_get(context, instance_id)
+#        host = instance_ref['host']
+#
+#        self.assert_compute_node_has_enough_memory(context, instance_ref, host)
+#
+#        return "host"

@@ -20,7 +20,6 @@ import json
 from nova import flags
 from nova import log as logging
 from nova import exception as nova_exception
-from nova import utils
 from nova.compute import task_states
 from nova.compute import vm_states
 from nova.compute import power_state
@@ -369,3 +368,14 @@ class ReddwarfComputeManager(ComputeManager):
                         'volume.resize.resizefs', notifier.ERROR,
                         "Error re-sizing filesystem volume:%s instance:%s"
                         % (volume_id, instance_id))
+
+    def resize_in_place(self, context, instance_id, instance_type_id):
+        """
+        Resizing the flavor to a new size of instance
+        """
+        #TODO(cp16net) this should be tim.simpson's part
+        # added for logging and completion
+        LOG.debug("inside the reddwarf compute manager resize()")
+        LOG.debug("context - %s" % context)
+        LOG.debug("instance_id - %s" % instance_id)
+        LOG.debug("instance_type_id - %s" % instance_type_id)

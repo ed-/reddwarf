@@ -123,11 +123,18 @@ class Instances(base.ManagerWithFind):
         resp, body = self.api.client.post(url, body=body)
         check_for_exceptions(resp, body)
 
-    def resize(self, instance_id, volume_size):
+    def resize_volume(self, instance_id, volume_size):
         """
         Resize the volume on an existing instances
         """
         body = {"resize": {"volume": {"size": volume_size}}}
+        self._action(instance_id, body)
+
+    def resize_instance(self, instance_id, flavor_id):
+        """
+        Resize the volume on an existing instances
+        """
+        body = {"resize": {"flavorRef": flavor_id}}
         self._action(instance_id, body)
 
     def restart(self, instance_id):
