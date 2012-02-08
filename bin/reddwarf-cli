@@ -90,11 +90,21 @@ class InstanceCommands(object):
         except:
             print sys.exc_info()[1]
 
-    def resize(self, id, size):
+    def resize_volume(self, id, size):
         """Resize an instance volume"""
         dbaas = common.get_client()
         try:
-            result = dbaas.instances.resize(id, size)
+            result = dbaas.instances.resize_volume(id, size)
+            if result:
+                print result
+        except:
+            print sys.exc_info()[1]
+
+    def resize_instance(self, id, flavor_id):
+        """Resize an instance flavor"""
+        dbaas = common.get_client()
+        try:
+            result = dbaas.instances.resize_instance(id, flavor_id)
             if result:
                 print result
         except:

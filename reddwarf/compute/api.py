@@ -17,9 +17,12 @@ from nova import flags
 from nova import log as logging
 from nova import rpc
 from nova.compute import api as nova_compute_api
+from nova.compute import instance_types
 from nova.compute import task_states
 from nova.compute import vm_states
 from nova.scheduler import api as scheduler_api
+from reddwarf import exception as reddwarf_exception
+from reddwarf.db import api as dbapi
 
 
 FLAGS = flags.FLAGS
@@ -61,3 +64,9 @@ class API(nova_compute_api.API):
                     vm_state=vm_states.ACTIVE,
                     task_state=task_states.REBOOTING)
         self._cast_compute_message('restart', context, instance_id)
+
+    @scheduler_api.reroute_compute("resize_in_place")
+    def resize_in_place(self, context, instance_id, new_instance_type_id):
+        """Resize an instance on its host."""
+        LOG.debug("inside the resize compute api call, passing.")
+

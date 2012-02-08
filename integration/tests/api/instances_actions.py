@@ -21,8 +21,6 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-from proboscis.decorators import time_out
 from sqlalchemy import create_engine
 from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy.sql.expression import text
@@ -35,7 +33,6 @@ from reddwarfclient.instances import REBOOT_HARD
 import tests
 from tests.api.instances import GROUP as INSTANCE_GROUP
 from tests.api.instances import GROUP_START
-from tests.api.instances import GROUP_TEST
 from tests.api.instances import instance_info
 from tests import util
 
@@ -239,3 +236,20 @@ class RebootTests(RebootTestBase):
     def test_successful_restart(self):
         """Restart MySQL via the REST API successfully."""
         self.successful_restart()
+
+@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP],
+      depends_on_groups=[GROUP_START], depends_on=[RebootTests])
+class ResizeInstanceTest(object):
+    """
+    Test cases for resize instance/volume
+    1. {resize: {volume: {size: 2}}} - pass
+    2. {resize: {volume: {}}}        - fail
+    3. {resize: {}}                  - fail
+    4. {resize: {flavorRef: 2}}      - pass
+    5. {resize: {flavorRef: 2,
+                 volume: {size: 2}}} - fail
+    """
+    @test
+    def test_instance_resize(self):
+        """Do some testing of resizing the instance."""
+        pass
