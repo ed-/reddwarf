@@ -20,7 +20,6 @@ import json
 from nova import flags
 from nova import log as logging
 from nova import exception as nova_exception
-
 from nova.compute import task_states
 from nova.compute import vm_states
 from nova.compute import power_state
