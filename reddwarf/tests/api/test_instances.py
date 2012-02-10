@@ -178,3 +178,40 @@ class InstanceApiValidation(test.TestCase):
     def test_resize_flavor_and_volume_invalid2(self):
         body = {'resize': {'flavorRef': 2,'volume': {}}}
         self.controller._validate_resize(body, 1)
+
+    @raises(exception.BadRequest)
+    def test_single_resize_invalid(self):
+        body = {'flavorRef': 2,'volume': {}}
+        self.controller._validate_single_resize_in_body(body)
+
+    @raises(exception.BadRequest)
+    def test_resize_instance_invalid2(self):
+        body = {'flavorRef': 2,'volume': {}}
+        self.controller._validate_resize_instance(body)
+
+    @raises(exception.BadRequest)
+    def test_resize_invalid3(self):
+        body = {'flavorRef': 2,'volume': {}}
+        self.controller._validate(body)
+
+    def test_resize_valid(self):
+        body = {'instance': {'volume': {'size': 2}}}
+        self.controller._validate(body)
+
+    @raises(exception.BadRequest)
+    def test_resize_invalid4(self):
+        body = {'instance': {'flavorRef': 2,'volume': {}}}
+        self.controller._validate(body)
+
+    @raises(exception.BadRequest)
+    def test_validate_volume_size_bad(self):
+        self.controller._validate_volume_size('a')
+
+    @raises(exception.BadRequest)
+    def test_validate_volume_size_bad2(self):
+        self.controller._validate_volume_size(-1)
+
+    @raises(exception.BadRequest)
+    def test_validate_volume_size_bad3(self):
+        self.controller._validate_volume_size(9999999)
+

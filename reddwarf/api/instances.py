@@ -476,7 +476,7 @@ class Controller(object):
         Controller._validate_empty_body(body)
         try:
             body['instance']
-            body['instance']['flavorRef']
+            body['instance']['volume']
             volume_size = body['instance']['volume']['size']
         except KeyError as e:
             LOG.error("Create Instance Required field(s) - %s" % e)
