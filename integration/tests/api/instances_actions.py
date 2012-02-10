@@ -21,6 +21,9 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+from proboscis.decorators import expect_exception
+from proboscis.decorators import time_out
+
 from sqlalchemy import create_engine
 from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy.sql.expression import text
@@ -29,7 +32,7 @@ from nova.compute import power_state
 from reddwarf.api.common import dbaas_mapping
 from reddwarf.guest.dbaas import LocalSqlClient
 from reddwarf.utils import poll_until
-from reddwarfclient.instances import REBOOT_HARD
+from reddwarf import exception
 import tests
 from tests.api.instances import GROUP as INSTANCE_GROUP
 from tests.api.instances import GROUP_START
@@ -241,7 +244,7 @@ class RebootTests(RebootTestBase):
       depends_on_groups=[GROUP_START], depends_on=[RebootTests])
 class ResizeInstanceTest(object):
     """
-    Test cases for resize instance/volume
+    Unit Test cases for resize instance/volume
     1. {resize: {volume: {size: 2}}} - pass
     2. {resize: {volume: {}}}        - fail
     3. {resize: {}}                  - fail
@@ -249,7 +252,55 @@ class ResizeInstanceTest(object):
     5. {resize: {flavorRef: 2,
                  volume: {size: 2}}} - fail
     """
+    @property
+    def instance(self):
+        return self.dbaas.instances.get(self.instance_id)
+
+    @property
+    def instance_local_id(self):
+        return instance_info.get_local_id()
+
+    @property
+    def instance_id(self):
+        return instance_info.id
+
+    @property
+    def flavor_id(self):
+        return instance_info.dbaas_flavor_href
+
+    @before_class
+    def setup(self):
+        self.dbaas = instance_info.dbaas
+
+    @test
+    @expect_exception(exception.BadRequest)
+    def test_instance_resize(self):
+        """Do some testing of resizing the instance."""
+        self.dbaas.instance.resize_instance(self.instance_id, self.flavor_id)
+
     @test
     def test_instance_resize(self):
         """Do some testing of resizing the instance."""
-        pass
+        self.dbaas.instance.resize_instance(self.instance_id, self.flavor_id)
+
+    @test(depends_on=[test_instance_resize])
+    def test_status_changed_to_resize(self):
+        instance = self.dbaas.instance.get(self.instance_id)
+        assert_equal(instance.status, 'RESIZING')
+
+    @test(depends_on=[test_status_changed_to_resize])
+    @expect_exception(exception.UnprocessableEntity)
+    def test_fail_to_try_to_resize_again(self):
+        self.dbaas.instance.resize_instance(self.instance_id, self.flavor_id)
+
+    @test(depends_on=[test_status_changed_to_resize])
+    @time_out(TIME_OUT_TIME)
+    def test_instance_returns_to_active_after_resize(self):
+        def is_finished_resizing():
+            instance = self.instance
+            if instance.status == "RESIZING":
+                return False
+            assert_equal("ACTIVE", instance.status)
+            return True
+        poll_until(is_finished_resizing, time_out = TIME_OUT_TIME)
+
