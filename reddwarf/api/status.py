@@ -24,6 +24,7 @@ from nova import db
 
 from reddwarf.db import api as dbapi
 from reddwarf.exception import NotFound
+from reddwarf.exception import UnprocessableEntity
 
 LOG = logging.getLogger('reddwarf.api.status')
 
@@ -76,8 +77,9 @@ class InstanceStatus(object):
         an instance_ref or cloud server dictionary from the REST api code.
 
         """
-        lookup = InstanceStatusLookup([instance_id])
-        return lookup.get_status_from_id(context, instance_id)
+        local_id = dbapi.localid_from_uuid(instance_id)
+        lookup = InstanceStatusLookup([local_id])
+        return lookup.get_status_from_id(context, local_id)
 
     @property
     def is_sql_running(self):
@@ -85,6 +87,17 @@ class InstanceStatus(object):
             power_state.RUNNING,
             ]
         return self.guest_state in responsive
+
+    @property
+    def can_perform_action_on_instance(self):
+        """
+        Checks if the instance is in a state where an action can be performed.
+        """
+        valid_action_states = ['ACTIVE']
+        if not self.status in valid_action_states:
+            msg = "Instance is not currently available for an action to be performed."
+            LOG.debug(msg)
+            raise UnprocessableEntity(msg)
 
     @property
     def status(self):

@@ -37,6 +37,7 @@ from reddwarf import exception
 from reddwarf import volume
 from reddwarf.api import common
 from reddwarf.api import deserializer
+from reddwarf.api.status import InstanceStatus
 from reddwarf.api.status import InstanceStatusLookup
 from reddwarf.api.views import instances
 from reddwarf.db import api as dbapi
@@ -119,15 +120,11 @@ class Controller(object):
         LOG.info("Call to resize instance %s" % id)
         LOG.debug("%s - %s", req.environ, req.body)
         context = req.environ['nova.context']
+        local_id = dbapi.localid_from_uuid(id)
 
-        # Validate the instance id exists
-        # TODO(cp16net) need to validate that the instance status is (Active?)
-        #               so we can resize volume or instance flavor
-        try:
-            instance_ref = self.compute_api.get(context, id)
-            LOG.debug("the instance_ref is = %r" % instance_ref)
-        except nova_exception.NotFound:
-            raise exception.NotFound()
+        # Validate the instance is available
+        i_status = InstanceStatus.load_from_db(context, id)
+        i_status.can_perform_action_on_instance()
 
         # Validate body is not empty
         Controller._validate_empty_body(body)
@@ -148,7 +145,6 @@ class Controller(object):
             # This must be a volume resize
             LOG.debug("VOLUME RESIZE")
 
-            local_id = dbapi.localid_from_uuid(id)
             volumes = db.volume_get_all_by_instance(context, local_id)
             assert len(volumes) == 1
             volume_ref = volumes[0]
@@ -167,6 +163,7 @@ class Controller(object):
             LOG.debug("INSTANCE RESIZE WITH FLAVORREF")
 
             # Validate the size attributes
+            instance_ref = self.compute_api.get(context, id)
             current_instance_type_id = instance_ref['instance_type_id']
             LOG.debug("the current_instance_type is = %r" % current_instance_type_id)
 
@@ -176,7 +173,8 @@ class Controller(object):
                 new_flavor_id = nova_common.get_id_from_href(new_flavor_ref)
                 new_instance_type_id = instance_types.get_instance_type_by_flavor_id(new_flavor_id)
             except nova_exception.FlavorNotFound:
-                raise exception.BadRequest("Required element/key - flavor_id (%s) was not found in the system" % new_flavor_ref)
+                raise exception.BadRequest("Required element/key - flavor_id (%s) was not found in the system" %
+                                           new_flavor_ref)
             LOG.debug("the new_instance_type_id is = %r" % new_instance_type_id)
 
             def get_memory_mb(instance_type_id):
