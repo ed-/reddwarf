@@ -765,7 +765,7 @@ class OpenVzConnection(driver.ComputeDriver):
 
     def _set_instance_size(self, instance, instance_type_id = None):
         """
-        Given that these parameters make up and instances 'size' we are
+        Given that these parameters make up and instance's 'size' we are
         bundling them together to make resizing an instance on the host
         an easier task.
         """
