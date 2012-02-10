@@ -95,7 +95,7 @@ class InstanceStatus(object):
         """
         valid_action_states = ['ACTIVE']
         if not self.status in valid_action_states:
-            msg = "Instance is not currently available for an action to be performed."
+            msg = "Instance is not currently available for an action to be performed. Status [%s]" % self.status
             LOG.debug(msg)
             raise UnprocessableEntity(msg)
 

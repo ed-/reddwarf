@@ -102,7 +102,7 @@ class InstanceApiTest(test.TestCase):
         res = req.get_response(util.wsgi_app(fake_auth_context=self.context))
         self.assertEqual(res.status_int, 422)
 
-    def test_instances_delete_failed(self):
+    def test_instances_delete(self):
         self.stubs.Set(nova.compute.API, "delete", compute_delete)
         self.stubs.Set(nova.compute.API, "get", compute_get_building)
         self.stubs.Set(reddwarf.db.api, "guest_status_get", guest_status_get_failed)
