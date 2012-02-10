@@ -147,7 +147,10 @@ refresh_up_agent_work_directory() {
         fi
         sudo mkdir -p $AGENT_WORK_DIR
         sudo chown vagrant $AGENT_WORK_DIR
-        git clone git://github.com/hub-cap/sneaky-pete.git $AGENT_WORK_DIR
+        git clone git://github.com/TimSimpsonR/sneaky-pete.git $AGENT_WORK_DIR
+        cd $AGENT_WORK_DIR
+        git fetch
+        git checkout resize-flavor
     fi
 }
 
@@ -746,7 +749,7 @@ nova_initialize() {
     reddwarf_manage db sync
 }
 
-setup_dns() {        
+setup_dns() {
     if [ ! -z "$SETUP_DNS" ]; then
         exclaim "Setting up DNS..."
         # Make sure the domain name exists (must happen before the image is added)
@@ -806,7 +809,7 @@ reset_services() {
     # Delete all of the volumes on the Volumes VM since the DB will now
     # be out of sync.
     ssh vagrant@33.33.33.11 "sudo /vagrant/volumeserver delete"
-    
+
     # Manually remove the nodes & send_targets
     sudo rm -fr /etc/iscsi/nodes
     sudo rm -fr /etc/iscsi/send_targets

@@ -79,7 +79,6 @@ class ResizeInPlaceTest(test.TestCase):
         instance_types.purge(self.inst_type_small['name'])
         instance_types.purge(self.inst_type_big['name'])
         instance_types.purge(self.inst_type_too_big['name'])
-        self.stubs.UnsetAll()
         super(ResizeInPlaceTest, self).tearDown()
 
     def create_instance(self, instance_type):

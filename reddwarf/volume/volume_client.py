@@ -39,7 +39,9 @@ class VolumeClient(Base):
         else:
             self.driver = volume_driver
         self.driver.db = self.db
-        self.driver.check_for_client_setup_error()
+        # Do initialization check if one is available.
+        if hasattr(self.driver, "check_for_client_setup_error"):
+            self.driver.check_for_client_setup_error()
         self.volume_api = API()
 
     def get_uuid(self, device_path):

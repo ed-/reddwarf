@@ -27,6 +27,7 @@ from nova.db import api as dbapi
 from nova.db import base
 
 from reddwarf import rpc as reddwarf_rpc
+from reddwarf import exception
 
 FLAGS = flags.FLAGS
 LOG = logging.getLogger('nova.guest.api')
@@ -118,13 +119,14 @@ class API(base.Base):
         return rpc.call(context, self._get_routing_key(context, id),
                  {"method": "get_diagnostics"})
 
-    def prepare(self, context, id, databases):
+    def prepare(self, context, id, memory_mb, databases):
         """Make an asynchronous call to prepare the guest
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
         reddwarf_rpc.cast_with_consumer(context, self._get_routing_key(context, id),
                  {"method": "prepare",
-                  "args": {"databases": databases}
+                  "args": {"databases": databases,
+                           "memory_mb":memory_mb}
                  })
 
     def restart(self, context, id):
@@ -138,18 +140,26 @@ class API(base.Base):
     def start_mysql_with_conf_changes(self, context, id, updated_memory_size):
         """Start the MySQL server."""
         LOG.debug(_("Sending the call to start MySQL on the Guest."))
-        rpc.call(context, self._get_routing_key(context, id),
-                {"method": "start_mysql_with_conf_changes",
-                 "args": {'updated_memory_size':updated_memory_size}
-                })
+        try:
+            rpc.call(context, self._get_routing_key(context, id),
+                    {"method": "start_mysql_with_conf_changes",
+                     "args": {'updated_memory_size':updated_memory_size}
+                    })
+        except Exception as e:
+            LOG.error(e)
+            raise exception.GuestError(original_message=str(e))
 
     def stop_mysql(self, context, id):
         """Stop the MySQL server."""
         LOG.debug(_("Sending the call to stop MySQL on the Guest."))
-        rpc.call(context, self._get_routing_key(context, id),
-                {"method": "stop_mysql",
-                 "args": {}
-                })
+        try:
+            rpc.call(context, self._get_routing_key(context, id),
+                    {"method": "stop_mysql",
+                     "args": {}
+                    })
+        except Exception as e:
+            LOG.error(e)
+            raise exception.GuestError(original_message=str(e))
 
     def upgrade(self, context, id):
         """Make an asynchronous call to self upgrade the guest agent"""
