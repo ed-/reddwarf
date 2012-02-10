@@ -273,22 +273,8 @@ class OpenVzConnection(driver.ComputeDriver):
         self._set_name(instance)
         self.plug_vifs(instance, network_info)
         self._set_hostname(instance)
-        self._set_vmguarpages(instance)
-        self._set_privvmpages(instance)
-        self._set_kmemsize(instance)
+        self._set_instance_size(instance)
         self._attach_volumes(instance)
-
-        if FLAGS.ovz_use_cpuunit:
-            self._set_cpuunits(instance)
-        if FLAGS.ovz_use_cpulimit:
-            self._set_cpulimit(instance)
-        if FLAGS.ovz_use_cpus:
-            self._set_cpus(instance)
-        if FLAGS.ovz_use_ioprio:
-            self._set_ioprio(instance)
-        if FLAGS.ovz_use_disk_quotas:
-            self._set_diskspace(instance)
-
         self._set_onboot(instance)
         self._start(instance)
         self._initial_secure_host(instance)
@@ -748,7 +734,69 @@ class OpenVzConnection(driver.ComputeDriver):
         # Apply the rules
         linux_net.iptables_manager.apply()
 
-    def _set_vmguarpages(self, instance):
+    def resize_in_place(self, instance, instance_type_id,
+                        restart_instance=False):
+        """
+        Making a public method for the API/Compute manager to get access
+        to host based resizing.
+        """
+        try:
+            self._set_instance_size(instance, instance_type_id)
+            if restart_instance:
+                self.reboot(instance, None)
+            return True
+        except Exception:
+            raise exception.InstanceUnacceptable(_("Instance resize failed"))
+
+    def reset_instance_size(self, instance, restart_instance=False):
+        """
+        Public method for changing an instance back to it's original
+        flavor spec.  If this fails an exception is raised because this
+        means that the instance flavor setting couldn't be rescued.
+        """
+        try:
+            self._set_instance_size(instance)
+            if restart_instance:
+                self.reboot(instance)
+            return True
+        except Exception:
+            raise exception.InstanceUnacceptable(
+                _("Instance size reset FAILED"))
+
+    def _set_instance_size(self, instance, instance_type_id = None):
+        """
+        Given that these parameters make up and instance's 'size' we are
+        bundling them together to make resizing an instance on the host
+        an easier task.
+        """
+        if not instance_type_id:
+            instance_type = instance_types.get_instance_type(
+                instance['instance_type_id'])
+        else:
+            instance_type = instance_types.get_instance_type(instance_type_id)
+
+        instance_memory_bytes = ((int(instance_type['memory_mb'])
+                                  * 1024) * 1024)
+        instance_memory_pages = self._calc_pages(instance_type['memory_mb'])
+        percent_of_resource = self._percent_of_resource(
+            instance_type['memory_mb'])
+        instance_vcpus = instance_type['vcpus']
+
+        self._set_vmguarpages(instance, instance_memory_pages)
+        self._set_privvmpages(instance, instance_memory_pages)
+        self._set_kmemsize(instance, instance_memory_bytes)
+        if FLAGS.ovz_use_cpuunit:
+            self._set_cpuunits(instance, percent_of_resource)
+        if FLAGS.ovz_use_cpulimit:
+            self._set_cpulimit(instance, percent_of_resource)
+        if FLAGS.ovz_use_cpus:
+            self._set_cpus(instance, instance_vcpus)
+        if FLAGS.ovz_use_ioprio:
+            self._set_ioprio(instance, percent_of_resource)
+        if FLAGS.ovz_use_disk_quotas:
+            self._set_diskspace(instance, instance_type)
+
+    def _set_vmguarpages(self, instance, num_pages):
         """
         Set the vmguarpages attribute for a container.  This number represents
         the number of 4k blocks of memory that are guaranteed to the container.
@@ -761,11 +809,9 @@ class OpenVzConnection(driver.ComputeDriver):
         If I fail to run then an exception is raised because this affects the
         memory allocation for the container.
         """
-        vmguarpages = self._calc_pages(instance)
-
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'],
-                                      '--save', '--vmguarpages', vmguarpages,
+                                      '--save', '--vmguarpages', num_pages,
                                       run_as_root=True)
             LOG.debug(_('Stdout output from vzctl: %s') % out)
             if err:
@@ -775,7 +821,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Cannot set vmguarpages for %s') %
                                   instance['id'])
 
-    def _set_privvmpages(self, instance):
+    def _set_privvmpages(self, instance, num_pages):
         """
         Set the privvmpages attribute for a container.  This represents the
         memory allocation limit.  Think of this as a bursting limit.  For now
@@ -789,11 +835,9 @@ class OpenVzConnection(driver.ComputeDriver):
         If I fail to run an exception is raised as this is essential for the
         running container to operate properly within it's memory constraints.
         """
-        privvmpages = self._calc_pages(instance)
-
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'], '--save',
-                                     '--privvmpages', privvmpages,
+                                     '--privvmpages', num_pages,
                                      run_as_root=True)
             LOG.debug(_('Stdout output from vzctl: %s') % out)
             if err:
@@ -803,7 +847,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Cannot set privvmpages for %s') %
                                   instance['id'])
 
-    def _set_kmemsize(self, instance):
+    def _set_kmemsize(self, instance, instance_memory):
         """
         Set the kmemsize attribute for a container.  This represents the
         amount of the container's memory allocation that will be made
@@ -818,13 +862,6 @@ class OpenVzConnection(driver.ComputeDriver):
         the container to operate under a normal load.  Defaults for this
         setting are completely inadequate for any normal workload.
         """
-
-        # First figure out what our allocated memory is via the
-        # flavor definition.
-        instance_type = instance_types.get_instance_type(
-            instance['instance_type_id'])
-        instance_memory = ((int(instance_type['memory_mb']) * 1024) * 1024)
-
         # Now use the configuration flags to calculate the appropriate
         # values for both barrier and limit.
         kmem_limit = int(instance_memory * (
@@ -846,7 +883,7 @@ class OpenVzConnection(driver.ComputeDriver):
                 _('Error setting kmemsize to %(kmemsize) on %(id)s') %
                 {'kmemsize': kmemsize, 'id': instance['id']})
 
-    def _set_cpuunits(self, instance, units=None):
+    def _set_cpuunits(self, instance, percent_of_resource):
         """
         Set the cpuunits setting for the container.  This is an integer
         representing the number of cpu fair scheduling counters that the
@@ -860,18 +897,16 @@ class OpenVzConnection(driver.ComputeDriver):
         sauce to constraining each container within it's subscribed slice of
         the host node.
         """
-        if not units:
-            LOG.debug(_('Reported cpuunits %s') % self.utility['UNITS'])
-            LOG.debug(_('Reported percent of resource: %s') %
-                      self._percent_of_resource(instance))
-            units = int(self.utility['UNITS'] *
-                        self._percent_of_resource(instance))
-            # TODO(imsplitbit): This needs to be adjusted to not allow
-            # subscription of more than available cpuunits.  For now we
-            # won't let the obvious case of a container getting more than
-            # the maximum cpuunits for the host.
-            if units > self.utility['UNITS']:
-                units = self.utility['UNITS']
+        LOG.debug(_('Reported cpuunits %s') % self.utility['UNITS'])
+        LOG.debug(_('Reported percent of resource: %s') %
+                  percent_of_resource)
+        units = int(self.utility['UNITS'] * percent_of_resource)
+        # TODO(imsplitbit): This needs to be adjusted to not allow
+        # subscription of more than available cpuunits.  For now we
+        # won't let the obvious case of a container getting more than
+        # the maximum cpuunits for the host.
+        if units > self.utility['UNITS']:
+            units = self.utility['UNITS']
 
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'], '--save',
@@ -884,7 +919,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Cannot set cpuunits for %s') %
                                   instance['id'])
 
-    def _set_cpulimit(self, instance, cpulimit=None):
+    def _set_cpulimit(self, instance, percent_of_resource):
         """
         This is a number in % equal to the amount of cpu processing power
         the container gets.  NOTE: 100% is 1 logical cpu so if you have 12
@@ -899,17 +934,14 @@ class OpenVzConnection(driver.ComputeDriver):
         sauce to constraining each container within it's subscribed slice of
         the host node.
         """
-
-        if not cpulimit:
-            cpulimit = int(self.utility['CPULIMIT'] *
-                           self._percent_of_resource(instance))
-            # TODO(imsplitbit): Need to fix this so that we don't alocate
-            # more than the current available resource limits.  This shouldn't
-            # happen except in test cases but we should still protect
-            # ourselves from it.  For now we just won't let it go higher
-            # than the maximum cpulimit for the host on any one container.
-            if cpulimit > self.utility['CPULIMIT']:
-                cpulimit = self.utility['CPULIMIT']
+        cpulimit = int(self.utility['CPULIMIT'] * percent_of_resource)
+        # TODO(imsplitbit): Need to fix this so that we don't alocate
+        # more than the current available resource limits.  This shouldn't
+        # happen except in test cases but we should still protect
+        # ourselves from it.  For now we just won't let it go higher
+        # than the maximum cpulimit for the host on any one container.
+        if cpulimit > self.utility['CPULIMIT']:
+            cpulimit = self.utility['CPULIMIT']
 
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'], '--save',
@@ -922,7 +954,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Unable to set cpulimit for %s') %
                                   instance['id'])
 
-    def _set_cpus(self, instance, cpus=None, multiplier=2):
+    def _set_cpus(self, instance, vcpus, multiplier=2):
         """
         The number of logical cpus that are made available to the container.
         I default to showing 2 cpus to each container at a minimum.
@@ -935,19 +967,18 @@ class OpenVzConnection(driver.ComputeDriver):
         of cores that are presented to each container and if this fails to set
         *ALL* cores will be presented to every container, that be bad.
         """
-        if not cpus:
-            inst_typ = instance_types.get_instance_type(
-                instance['instance_type_id']
-            )
-            cpus = int(inst_typ['vcpus']) * multiplier
-            # TODO(imsplitbit): We need to fix this to not allow allocation of
-            # more than the maximum allowed cpus on the host.
-            if cpus > (self.utility['CPULIMIT'] / 100):
-                cpus = self.utility['CPULIMIT'] / 100
+        inst_typ = instance_types.get_instance_type(
+            instance['instance_type_id']
+        )
+        vcpus = vcpus * multiplier
+        # TODO(imsplitbit): We need to fix this to not allow allocation of
+        # more than the maximum allowed cpus on the host.
+        if vcpus > (self.utility['CPULIMIT'] / 100):
+            vcpus = self.utility['CPULIMIT'] / 100
 
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'], '--save',
-                                     '--cpus', cpus, run_as_root=True)
+                                     '--cpus', vcpus, run_as_root=True)
             LOG.debug(_('Stdout output from vzctl: %s') % out)
             if err:
                 LOG.error(_('Stderr output from vzctl: %s') % err)
@@ -956,7 +987,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Unable to set cpus for %s') %
                                   instance['id'])
 
-    def _set_ioprio(self, instance, ioprio=None):
+    def _set_ioprio(self, instance, percent_of_resource):
         """
         Set the IO priority setting for a given container.  This is represented
         by an integer between 0 and 7.  If no priority is given one will be
@@ -971,9 +1002,7 @@ class OpenVzConnection(driver.ComputeDriver):
         given the same weight by default which will cause bad performance
         across all containers when there is input/outpu contention.
         """
-        if not ioprio:
-            ioprio = int(self._percent_of_resource(instance) * float(
-                FLAGS.ovz_ioprio_limit))
+        ioprio = int(float(FLAGS.ovz_ioprio_limit) * percent_of_resource)
 
         try:
             out, err = utils.execute('vzctl', 'set', instance['id'], '--save',
@@ -986,7 +1015,7 @@ class OpenVzConnection(driver.ComputeDriver):
             raise exception.Error(_('Unable to set IO priority for %s') %
                 instance['id'])
 
-    def _set_diskspace(self, instance, soft=None, hard=None):
+    def _set_diskspace(self, instance, instance_type):
         """
         Implement OpenVz disk quotas for local disk space usage.
         This method takes a soft and hard limit.  This is also the amount
@@ -1001,15 +1030,10 @@ class OpenVzConnection(driver.ComputeDriver):
         If I fail to run an exception is raised because this command limits a
         container's ability to hijack all available disk space.
         """
-        instance_type = instance_types.get_instance_type(
-            instance['instance_type_id'])
+        soft = int(instance_type['local_gb'])
 
-        if not soft:
-            soft = int(instance_type['local_gb'])
-
-        if not hard:
-            hard = int(instance_type['local_gb'] *
-                       FLAGS.ovz_disk_space_oversub_percent)
+        hard = int(instance_type['local_gb'] *
+                    FLAGS.ovz_disk_space_oversub_percent)
 
         # Now set the increment of the limit.  I do this here so that I don't
         # have to do this in every line above.
@@ -1546,15 +1570,13 @@ class OpenVzConnection(driver.ComputeDriver):
         """
         return
 
-    def _calc_pages(self, instance, block_size=4096):
+    def _calc_pages(self, instance_memory_mb, block_size=4096):
         """
         Returns the number of pages for a given size of storage/memory
         """
-        instance_type = instance_types.get_instance_type(
-            instance['instance_type_id'])
-        return ((int(instance_type['memory_mb']) * 1024) * 1024) / block_size
+        return ((instance_memory_mb * 1024) * 1024) / block_size
 
-    def _percent_of_resource(self, instance):
+    def _percent_of_resource(self, memory_mb):
         """
         In order to evenly distribute resources this method will calculate a
         multiplier based on memory consumption for the allocated container and
@@ -1565,9 +1587,7 @@ class OpenVzConnection(driver.ComputeDriver):
         someone choose to do so, they can adjust the container's cpu usage
         up or down.
         """
-        instance_type = instance_types.get_instance_type(
-            instance['instance_type_id'])
-        cont_mem_mb = float(instance_type['memory_mb']) / \
+        cont_mem_mb = memory_mb / \
                       float(self.utility['MEMORY_MB'])
 
         # We shouldn't ever have more than 100% but if for some unforseen
