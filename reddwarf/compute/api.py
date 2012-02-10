@@ -87,9 +87,3 @@ class API(nova_compute_api.API):
                     vm_state=vm_states.ACTIVE,
                     task_state=task_states.REBOOTING)
         self._cast_compute_message('restart', context, instance_id)
-
-    @scheduler_api.reroute_compute("resize_in_place")
-    def resize_in_place(self, context, instance_id, new_instance_type_id):
-        """Resize an instance on its host."""
-        LOG.debug("inside the resize compute api call, passing.")
-

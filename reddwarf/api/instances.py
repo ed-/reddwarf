@@ -107,6 +107,56 @@ class Controller(object):
             LOG.error(err)
             raise exception.InstanceFault("Error restarting MySQL.")
 
+    def _resize_volume_action(self, context, body, local_id):
+        volumes = db.volume_get_all_by_instance(context, local_id)
+        assert len(volumes) == 1
+        volume_ref = volumes[0]
+        Controller._validate_resize(body, volume_ref['size'])
+        # Initiate the resizing of the volume
+        new_size = body['resize']['volume']['size']
+        self.volume_api.resize(context, volume_ref['id'], new_size)
+        # Kickoff rescaning and resizing the filesystem
+        self.compute_api.resize_volume(context, volume_ref['id'])
+        return exc.HTTPAccepted()
+
+    def _resize_instance_action(self, context, body, id):
+        # Validate the size attributes
+        Controller._validate_resize_instance(body)
+        instance_ref = self.compute_api.get(context, id)
+        current_instance_type_id = instance_ref['instance_type_id']
+        LOG.debug("the current_instance_type is = %r" % current_instance_type_id)
+
+        new_flavor_ref = body['resize'].get('flavorRef')
+        try:
+            # Get the instance type from the flavor id
+            new_flavor_id = nova_common.get_id_from_href(new_flavor_ref)
+            new_instance_type_id = instance_types.get_instance_type_by_flavor_id(new_flavor_id)
+        except nova_exception.FlavorNotFound:
+            raise exception.BadRequest("Required element/key - flavor_id (%s) was not found in the system" %
+                                       new_flavor_ref)
+        LOG.debug("the new_instance_type_id is = %r" % new_instance_type_id)
+
+        def get_memory_mb(instance_type_id):
+            inst_type = instance_types.get_instance_type(instance_type_id)
+            return inst_type['memory_mb']
+
+        #TODO(cp16net) should we just rely on the compute api to check the size?
+        old_size = get_memory_mb(current_instance_type_id)
+        new_size = get_memory_mb(new_instance_type_id['id'])
+        diff_size = new_size - old_size
+        if diff_size == 0:
+            msg = "When resizing, instances must change size!"
+            LOG.error(msg)
+            raise exception.BadRequest(msg)
+
+        try:
+            # Perform the resize
+            self.compute_api.resize_in_place(context, id, new_instance_type_id['id'])
+        except exception.OutOfInstanceMemory:
+            raise exception.UnprocessableEntity()
+
+        return exc.HTTPAccepted()
+
     def _action_resize(self, body, req, id):
         """
         Handles 2 cases
@@ -122,86 +172,26 @@ class Controller(object):
         context = req.environ['nova.context']
         local_id = dbapi.localid_from_uuid(id)
 
-        # Validate the instance is available
+        # Validate the instance is available(status)
         i_status = InstanceStatus.load_from_db(context, id)
         i_status.can_perform_action_on_instance()
 
-        # Validate body is not empty
+        # Validate body is not empty and just a single resize in body
         Controller._validate_empty_body(body)
-
-        # Validate body resize does not have both volume and flavorRef
-        try:
-            resize = body['resize']
-            if 'volume' in resize and 'flavorRef' in resize:
-                msg = "Not allowed to resize volume and flavor at the same time"
-                LOG.error(msg)
-                raise exception.BadRequest(msg)
-        except KeyError as e:
-            LOG.error("Resize Instance Required field(s) - %s" % e)
-            raise exception.BadRequest("Required element/key - %s was not "
-                                       "specified" % e)
+        Controller._validate_single_resize_in_body(body)
 
         if 'volume' in body['resize']:
             # This must be a volume resize
             LOG.debug("VOLUME RESIZE")
 
-            volumes = db.volume_get_all_by_instance(context, local_id)
-            assert len(volumes) == 1
-            volume_ref = volumes[0]
-
-            Controller._validate_resize(body, volume_ref['size'])
-
-            # Initiate the resizing of the volume
-            new_size = body['resize']['volume']['size']
-            self.volume_api.resize(context, volume_ref['id'], new_size)
-            # Kickoff rescaning and resizing the filesystem
-            self.compute_api.resize_volume(context, volume_ref['id'])
-            return exc.HTTPAccepted()
+            return self._resize_volume_action(context, body, local_id)
 
         elif 'flavorRef' in body['resize']:
             # This must be an instance resize with flavorRef
             LOG.debug("INSTANCE RESIZE WITH FLAVORREF")
 
-            # Validate the size attributes
-            instance_ref = self.compute_api.get(context, id)
-            current_instance_type_id = instance_ref['instance_type_id']
-            LOG.debug("the current_instance_type is = %r" % current_instance_type_id)
+            return self._resize_instance_action(context, body, id)
 
-            new_flavor_ref = body['resize'].get('flavorRef')
-            try:
-                # Get the instance type from the flavor id
-                new_flavor_id = nova_common.get_id_from_href(new_flavor_ref)
-                new_instance_type_id = instance_types.get_instance_type_by_flavor_id(new_flavor_id)
-            except nova_exception.FlavorNotFound:
-                raise exception.BadRequest("Required element/key - flavor_id (%s) was not found in the system" %
-                                           new_flavor_ref)
-            LOG.debug("the new_instance_type_id is = %r" % new_instance_type_id)
-
-            def get_memory_mb(instance_type_id):
-                inst_type = instance_types.get_instance_type(instance_type_id)
-                return inst_type['memory_mb']
-
-            old_size = get_memory_mb(current_instance_type_id)
-            new_size = get_memory_mb(new_instance_type_id['id'])
-            diff_size = new_size - old_size
-            if diff_size == 0:
-                msg = "When resizing, instances must change size!"
-                LOG.error(msg)
-                raise exception.BadRequest(msg)
-
-            # Check the host has space to resize
-            host = instance_ref['host']
-            host_mem_used = dbapi.instance_get_memory_sum_by_host(context, host)
-            if host_mem_used + diff_size > FLAGS.max_instance_memory_mb:
-                raise exception.OutOfInstanceMemory()
-
-            try:
-                # Perform the resize
-                self.compute_api.resize_in_place(context, id, new_instance_type_id['id'])
-            except exception.OutOfInstanceMemory:
-                raise exception.UnprocessableEntity()
-
-            return exc.HTTPAccepted()
         else:
             return exception.BadRequest()
 
@@ -493,6 +483,31 @@ class Controller(object):
             raise exception.BadRequest("Required element/key - %s was not "
                                        "specified" % e)
         Controller._validate_volume_size(volume_size)
+
+    @staticmethod
+    def _validate_resize_instance(body):
+        """ Validate that the resize body has the attributes for flavorRef """
+        try:
+            body['resize']
+            body['resize']['flavorRef']
+        except KeyError as e:
+            LOG.error("Resize Instance Required field(s) - %s" % e)
+            raise exception.BadRequest("Required element/key - %s was not "
+                                       "specified" % e)
+
+    @staticmethod
+    def _validate_single_resize_in_body(body):
+        # Validate body resize does not have both volume and flavorRef
+        try:
+            resize = body['resize']
+            if 'volume' in resize and 'flavorRef' in resize:
+                msg = "Not allowed to resize volume and flavor at the same time."
+                LOG.error(msg)
+                raise exception.BadRequest(msg)
+        except KeyError as e:
+            LOG.error("Resize Instance Required field(s) - %s" % e)
+            raise exception.BadRequest("Required element/key - %s was not "
+                                       "specified" % e)
 
     @staticmethod
     def _validate_resize(body, old_volume_size):
