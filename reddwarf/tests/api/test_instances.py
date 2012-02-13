@@ -112,7 +112,17 @@ class InstanceApiTest(test.TestCase):
 
 
 class InstanceApiValidation(test.TestCase):
-    """Test the instance api validation methods"""
+    """
+    Test the instance api validation methods
+
+    Unit Test cases for resize instance/volume
+    1. {resize: {volume: {size: 2}}} - pass
+    2. {resize: {volume: {}}}        - fail
+    3. {resize: {}}                  - fail
+    4. {resize: {flavorRef: 2}}      - pass
+    5. {resize: {flavorRef: 2,
+                 volume: {size: 2}}} - fail
+    """
 
     resize_body = {'resize': {'volume': {'size': 2}}}
 

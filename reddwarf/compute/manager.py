@@ -162,7 +162,9 @@ class ReddwarfInstanceInitializer(object):
 
         """
         try:
-            guest_api.prepare(self.context, self.instance_id,
+            instance_ref = self.db.instance_get(self.context, self.instance_id)
+            memory_mb = instance_ref['memory_mb']
+            guest_api.prepare(self.context, self.instance_id, memory_mb,
                                           self.databases)
             poll_until(lambda : dbapi.guest_status_get(self.instance_id),
                              lambda status : status.state == power_state.RUNNING,

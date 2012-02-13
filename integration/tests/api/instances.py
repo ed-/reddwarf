@@ -594,7 +594,7 @@ class TestInstanceListing(object):
 
 
 @test(depends_on_groups=['dbaas.api.root'], groups=[GROUP, tests.INSTANCES])
-class ResizeInstance(object):
+class ResizeVolumeInstance(object):
     """ Resize the volume of the instance """
 
     @before_class
@@ -650,7 +650,7 @@ class ResizeInstance(object):
                      "Returned list: %s" % (name, databases))
 
 
-@test(depends_on_classes=[ResizeInstance], groups=[GROUP, tests.INSTANCES, "dbaas.diagnostics"])
+@test(depends_on_classes=[ResizeVolumeInstance], groups=[GROUP, tests.INSTANCES, "dbaas.diagnostics"])
 class CheckDiagnosticsAfterTests(object):
     """ Check the diagnostics after running api commands on an instance. """
     @test
