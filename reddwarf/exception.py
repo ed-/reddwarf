@@ -108,6 +108,9 @@ class OutOfInstanceMemory(nova_exception.NovaException):
     message = _("Scheduler unable to find a host with memory left for an "
                 "instance needing %(instance_memory_mb)s MB of RAM.")
 
+class GuestError(nova_exception.NovaException):
+    message = _("An error occurred communicating with the guest: "
+                "%(original_message.")
 
 class PollTimeOut(nova_exception.NovaException):
     message = _("Polling request timed out.")
