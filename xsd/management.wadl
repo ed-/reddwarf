@@ -16,7 +16,7 @@
     <include href="dbaas.xsd"/>
     <include href="management.xsd"/>
   </grammars>
-  <resources base="https://ord.databases.api.rackspacecloud.com">
+  <resources base="https://localhost:8775">
     <resource id="mgmt" path="mgmt">
       <resource id="hosts" path="hosts">
           <method href="#gethosts"/>
