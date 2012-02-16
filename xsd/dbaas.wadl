@@ -41,8 +41,9 @@
                         <method href="#getInstanceById" />
                         <method href="#deleteInstance" />
                         <resource id="instanceAction" path="action">
-                            <method href="#restartInstance" />
                             <method href="#resizeInstance" />
+                            <method href="#resizeVolume" />
+                            <method href="#restartInstance" />
                         </resource>
                         <resource id="databases" path="databases">
                             <method href="#createDatabase" />
@@ -457,6 +458,44 @@
     </method>
 
     <method name="POST" id="resizeInstance">
+        <wadl:doc xml:lang="EN" title="Resize the Instance"  xmlns="http://docbook.org/ns/docbook">
+            <para role="shortdesc">Resize the memory of the Instance.</para>
+            <para>Changes the memory size of the Instance, provided a valid flavor_id. Restarts MySQL in the process.</para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml"
+                            element="dbaas:Resize">
+                <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The following examples show the Resize Instance requests:</para>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-resize-instance-request.xml"/>
+                </doc>
+            </representation>
+            <representation mediaType="application/json"
+                            element="dbaas:Resize">
+                <doc>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-resize-instance-request.json"/>
+                </doc>
+            </representation>
+        </request>
+        <response status="202">
+            <representation mediaType="application/xml">
+                <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The following examples show the Resize Instance responses:</para>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-resize-instance-response.xml"/>
+                </doc>
+            </representation>
+            <representation mediaType="application/json">
+                <doc>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-resize-instance-response.json"/>
+                </doc>
+            </representation>
+        </response>
+        &commonFaults;
+        &getFaults;
+        &postPutFaults;
+    </method>
+
+    <method name="POST" id="resizeVolume">
         <wadl:doc xml:lang="EN" title="Resize the Instance"  xmlns="http://docbook.org/ns/docbook">
             <para role="shortdesc">Resize the volume attached to the Instance.</para>
             <para>This supports resizing the attached volume to an instance. It only supports increasing the volume size and does not support decreasing the size.</para>

@@ -29,7 +29,7 @@
       <resource id="instances" path="instances">
         <method href="#getIndex" name="GET">
             <request>
-              <param name="deleted" style="query" type="xsd:string" />
+              <param name="deleted" style="query" type="xsd:boolean" />
             </request>
         </method>
         <resource id="instanceId" path="{instanceId}">
