@@ -44,3 +44,5 @@ nova/compute/manager.py
 nova/db/sqlalchemy/api.py
 nova/db/sqlalchemy/models.py
 nova/utils.py
+apidocs/target
+covhtml

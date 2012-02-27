@@ -89,3 +89,7 @@ class API(nova_compute_api.API):
                     vm_state=vm_states.ACTIVE,
                     task_state=task_states.REBOOTING)
         self._cast_compute_message('restart', ctxt, instance_id)
+
+    @scheduler_api.reroute_compute("update_guest")
+    def update_guest(self, ctxt, instance_id):
+        self._cast_compute_message('update_guest', ctxt, instance_id)

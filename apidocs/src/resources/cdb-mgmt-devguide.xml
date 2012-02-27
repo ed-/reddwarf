@@ -1161,6 +1161,7 @@
             <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
                 <wadl:resource href="management.wadl#instanceAction" >
                     <wadl:method href="rebootInstance"/>
+                    <wadl:method href="updateGuest"/>
                 </wadl:resource>
             </wadl:resources>
         </section>

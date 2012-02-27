@@ -44,6 +44,7 @@
           </resource>
           <resource id="instanceAction" path="action">
             <method href="#rebootInstance" />
+            <method href="#updateGuest" />
           </resource>
         </resource>
       </resource>
@@ -250,7 +251,7 @@
     <wadl:doc xml:lang="EN" title="Reboot the Instance"  xmlns="http://docbook.org/ns/docbook">
       <para role="shortdesc">Perform a reboot of the instance.</para>
       <para>This operation will reboot the underlying OS along with the mysql instance.</para>
-      <para>This operation does returns a 202 Accepted response.</para>
+      <para>This operation returns a 202 Accepted response.</para>
     </wadl:doc>
     <request>
       <representation mediaType="application/xml" element="dbaas:Reboot">
@@ -282,6 +283,47 @@
     &getFaults;
     &postPutFaults;
   </method>
+
+    <method name="POST" id="updateGuest">
+        <wadl:doc xml:lang="EN" title="Update the Guest Agent"  xmlns="http://docbook.org/ns/docbook">
+            <para role="shortdesc">Update the guest agent on the instance.</para>
+            <para>This operation returns a 202 Accepted response.</para>
+            <para>While the guest agent is being updated the instance status
+                will be TODO_MYSTERY and some calls which require the agent
+                (such as listing databases or users) will return
+                unprocessableEntity (422).</para>
+        </wadl:doc>
+        <request>
+            <representation mediaType="application/xml" element="dbaas:UpdateGuest">
+                <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The following examples show the Update Guest Instance requests:</para>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-update-guest-request.xml"/>
+                </doc>
+            </representation>
+            <representation mediaType="application/json" element="dbaas:UpdateGuest">
+                <doc>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-update-guest-request.json"/>
+                </doc>
+            </representation>
+        </request>
+        <response status="202">
+            <representation mediaType="application/xml">
+                <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The following examples show the UpdateGuest Instance responses:</para>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-update-guest-response.xml"/>
+                </doc>
+            </representation>
+            <representation mediaType="application/json">
+                <doc>
+                    <xsdxt:code href="../apidocs/src/resources/samples/db-instance-update-guest-response.json"/>
+                </doc>
+            </representation>
+        </response>
+        &commonFaults;
+        &getFaults;
+        &postPutFaults;
+    </method>
+
 
   <method name="GET" id="indexstorage">
     <wadl:doc xml:lang="EN" title="List Storage Device Details" xmlns="http://docbook.org/ns/docbook">
