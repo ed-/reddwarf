@@ -17,6 +17,8 @@
 
 import json
 
+from eventlet.timeout import Timeout
+
 from nova import flags
 from nova import log as logging
 from nova import exception as nova_exception
@@ -35,12 +37,16 @@ from nova.volume import api as volume_api
 from reddwarf import guest
 from reddwarf.db import api as dbapi
 from reddwarf import exception
+from reddwarf.guest import status as guest_status
 from reddwarf.utils import poll_until
 
 
 flags.DEFINE_integer('reddwarf_guest_initialize_time_out', 10 * 60,
                      'Time in seconds for a guest to initialize before it is '
                      'considered a failure and aborted.')
+flags.DEFINE_integer('reddwarf_guest_update_time_out', 10 * 60,
+                     'Time in seconds for the guest update to finish before '
+                     'the manager presumes it to have failed.')
 flags.DEFINE_integer('reddwarf_instance_suspend_time_out', 3 * 60,
                      'Time in seconds for a compute instance to suspend '
                      'during when aborted before a PollTimeOut is raised.')
@@ -447,3 +453,17 @@ class ReddwarfComputeManager(ComputeManager):
                         'volume.resize.resizefs', notifier.ERROR,
                         "Error re-sizing filesystem volume:%s instance:%s"
                         % (volume_id, instance_id))
+
+    def update_guest(self, context, instance_id):
+        time_out = Timeout(FLAGS.reddwarf_guest_update_time_out)
+        try:
+            LOG.debug("Calling 'update_guest' for instance %s." % instance_id)
+            version = self.guest_api.update_guest(context, instance_id)
+            LOG.info("update_guest finished for %s. Version is now %s."
+                     % (instance_id, version))
+        except Timeout as to:
+            LOG.error("Timeout while waiting for update_guest (instance=%s): %s"
+                      % (instance_id, str(to)))
+            dbapi.guest_status_update(instance_id, guest_status.UNKNOWN)
+        finally:
+            time_out.cancel()

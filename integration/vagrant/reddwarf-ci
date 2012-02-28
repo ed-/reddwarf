@@ -474,6 +474,7 @@ dbaas_pkg_upload_nova() {
     sudo -E reprepro --ignore=wrongdistribution -Vb $PACKAGES_DIR include squeeze glance_2011.3-${GIT_REVISION}_amd64.changes
 }
 
+
 dbaas_pkg_build_sneaky_pete() {
     exclaim "Building and packaging Sneaky Pete..."
     refresh_up_agent_work_directory
@@ -490,14 +491,26 @@ dbaas_pkg_build_sneaky_pete() {
 
     fi
 
-    # If using a working copy, AGENT_DIR == AGENT_WORK_DIR.
-    # So enter that directory, build it there first (to avoid confusion), then
-    # copy it to the $BUILD_DIR.
+    # We could just always run the package script for the version of Sneaky Pete
+    # in /tmp/build but that gets confusing if the user has a checked-out copy
+    # in /agent.
+    # So in that case, we build in /agent and then copy it over.
     if [ -d $AGENT_DIR ]; then
         cd $AGENT_WORK_DIR
 
+        if [ "$1" == "fake" ]; then
+            echo '
+              #ifndef __NOVA_GUEST_VERSION_H
+              #define __NOVA_GUEST_VERSION_H
+
+              #define NOVA_GUEST_CURRENT_VERSION "Dopple-Pete"
+
+              #endif //__NOVA_GUEST_VERSION_H
+             ' > bin/gcc-4.4.5/release/link-static/nova_guest_version.hpp
+        fi
+
         bjam -d+2 link=static release nova-guest
-        cp -rf $AGENT_WORK_DIR/* $BUILD_DIR/agent
+        sudo cp -rf $AGENT_WORK_DIR/* $BUILD_DIR/agent
     fi
 
     # If there isn't a working copy $BUILD_DIR/agent will already exist and
@@ -505,8 +518,50 @@ dbaas_pkg_build_sneaky_pete() {
 
     cd $BUILD_DIR/agent
     sudo DEB_BUILD_OPTIONS=nocheck,nodocs dpkg-buildpackage -rfakeroot -b -uc -us
+
     # Install in repo
-    sudo -E reprepro --ignore=wrongdistribution -Vb $PACKAGES_DIR include squeeze $BUILD_DIR/nova-guest*_amd64.changes
+    sudo -E reprepro --ignore=wrongdistribution -Vb $PACKAGES_DIR include squeeze $BUILD_DIR/nova-guest_2012.21.12_amd64.changes
+
+    # Now make Dopple-Pete.
+    # Dopple-Pete is a fake upgraded package of Sneaky Pete we create to test
+    # upgrades. We create the package here, but we don't install it in the repo
+    # until later.
+    exclaim "Building Dopple-Pete"
+    if [ -d $AGENT_DIR ]; then
+        exclaim "Back to agent dir"
+        # If working with agent shared folder, change the version there.
+        cd $AGENT_WORK_DIR
+    fi
+    # Here we could make Dopple-Pete.
+    # Make Sneaky Pete give us back some poppycock.
+    echo '
+     #ifndef __NOVA_GUEST_VERSION_H
+     #define __NOVA_GUEST_VERSION_H
+
+     #define NOVA_GUEST_CURRENT_VERSION "Dopple-Pete"
+
+     #endif //__NOVA_GUEST_VERSION_H
+    ' > bin/gcc-4.4.5/release/link-static/nova_guest_version.hpp
+    # Delete the binary just in case Boost Build attempts deception.
+    rm -rf bin/gcc-4.4.5/release/link-static/nova-guest
+
+    if [ -d $AGENT_DIR ]; then
+        exclaim "Back to agent dir part 2"
+        # If working with agent shared folder, build it there and copy.
+        bjam -d+2 link=static release nova-guest
+        sudo cp -rf $AGENT_WORK_DIR/* $BUILD_DIR/agent
+    fi
+
+
+    cd $BUILD_DIR/agent
+    # Change the changelog to make the version appear more recent.
+    sudo sed -i.bak "s/2012/2013/g" debian/changelog
+
+    # Build and package it again
+    sudo DEB_BUILD_OPTIONS=nocheck,nodocs dpkg-buildpackage -rfakeroot -b -uc -us
+    # This will leave Dopple-Pete at:
+    # $BUILD_DIR/nova-guest_2013.21.12_all.deb
+    # sudo -E reprepro --ignore=wrongdistribution -Vb $PACKAGES_DIR include squeeze $BUILD_DIR/nova-guest_2013.21.12_amd64.changes
 
     # If we don't do this, we won't have the permission to the bin directory
     # to run functional tests later (this is only if we aren't using the
@@ -514,6 +569,12 @@ dbaas_pkg_build_sneaky_pete() {
     cd $BUILD_DIR/agent
     sudo chown -R vagrant bin
     sudo chown -R vagrant parrot
+}
+
+dpkg_summon_dopple_pete() {
+    # Installs the "Dopple-Pete" package create by dbaas_pkg_build_sneaky_pete
+    # and puts it in the repo so that the next install or upgrade will use it.
+    sudo -E reprepro --ignore=wrongdistribution -Vb $PACKAGES_DIR include squeeze $BUILD_DIR/nova-guest_2013.21.12_amd64.changes
 }
 
 patch_src_dir() {
@@ -573,6 +634,14 @@ build_agent() {
     dbaas_pkg_build_sneaky_pete no-clean
     sudo apt-get update
 }
+
+repkg_agent_with_nonsense_version() {
+    modify_pkg = $BUILD_DIR/oizys/generic_package_scripts/modify_package.sh
+    deb_full_path = $BUILD_DIR/nova-guest_2012.21.12_all.deb
+    old_version_string = $1
+    $modify_pkg $deb_full_path $old_version_string $new_version_string
+}
+
 
 ###############################################################################
 
@@ -1049,6 +1118,7 @@ case "$1" in
     "patch" ) patch_src_dir;;
     "revert-patch" ) revert_patch;;
     "unit-tests" ) shift; run_unit_tests $@;;
+    "summon-dopple-pete" ) dpkg_summon_dopple_pete;;
     * )
         echo "'$1' not a valid command"
         exit 1

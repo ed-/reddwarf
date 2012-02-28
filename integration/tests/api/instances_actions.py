@@ -251,6 +251,7 @@ class RebootTests(RebootTestBase):
         """Restart MySQL via the REST API successfully."""
         self.successful_restart()
 
+
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP, GROUP + ".resize.instance"],
       depends_on_groups=[GROUP_START], depends_on=[RebootTests])
 class ResizeInstanceTest(RebootTestBase):
@@ -367,3 +368,39 @@ class ResizeInstanceVolume(object):
             if not name in db_list:
                 fail("Database %s was not found after the volume resize. "
                      "Returned list: %s" % (name, databases))
+
+
+@test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP],
+      depends_on_groups=[GROUP_START])
+class UpdateGuest(object):
+
+    #TODO(tim.simpson): 1. Make the "NEXT_VERSION" var driven by a conf value.
+    #                   2. Figure out a way to automatically save that this test
+    #                      has been run, so Reddwarfers on a CI box won't risk
+    #                      running this test twice (its really only going to
+    #                      work for CI boxes).
+
+    NEXT_VERSION = "Dopple-Pete"
+
+    def get_version(self):
+        info = instance_info.dbaas_admin.diagnostics.get(instance_info.id)
+        return info.version
+
+    @before_class
+    def check_version_is_old(self):
+        """Make sure we have the old version before proceeding."""
+        self.old_version = get_version()
+        assert_not_equal(self.old_version, NEXT_VERSION)
+
+    @test
+    def update_and_wait_to_finish(self):
+        instance_info.dbaas_admin.update_guest(instance_info.id)
+        def finished():
+            current_version = get_version()
+            if current_version == NEXT_VERSION:
+                return True
+            # The only valid thing for it to be aside from next_version is
+            # old version.
+            assert_equal(current_version, self.old_version)
+        poll_until(finished(), sleep_time=1, time_out=3 * 60)
+

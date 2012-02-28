@@ -91,5 +91,6 @@ class API(nova_compute_api.API):
         self._cast_compute_message('restart', ctxt, instance_id)
 
     @scheduler_api.reroute_compute("update_guest")
+
     def update_guest(self, ctxt, instance_id):
         self._cast_compute_message('update_guest', ctxt, instance_id)

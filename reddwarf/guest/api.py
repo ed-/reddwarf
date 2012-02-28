@@ -166,3 +166,11 @@ class API(base.Base):
         topic = self._get_routing_key(context, id)
         LOG.debug("Sending an upgrade call to nova-guest %s", topic)
         reddwarf_rpc.cast_with_consumer(context, topic, {"method": "upgrade"})
+
+    def update_guest(self, context, id):
+        """Make a synchronous call to update the guest agent."""
+        rpc.call(context, self._get_routing_key(context, id),
+                {"method": "update_guest",
+                 "args": {}
+            })
+
