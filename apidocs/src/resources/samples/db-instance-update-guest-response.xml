@@ -1,9 +1,8 @@
 HTTP/1.1 202 Accepted
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 58
-Date: Tue, 07 Feb 2012 23:53:42 GMT
+Date: Wed, 29 Feb 2012 23:53:42 GMT
 
 202 Accepted
 
-
-TODO
+The request is accepted for processing.

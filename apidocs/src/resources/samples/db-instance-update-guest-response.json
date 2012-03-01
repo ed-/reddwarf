@@ -1,6 +1,8 @@
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 987
-Date: Wed, 25 Jan 2012 21:58:17 GMT
+HTTP/1.1 202 Accepted
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 58
+Date: Wed, 29 Feb 2012 23:53:42 GMT
 
-{"TODO":"implement"}
+202 Accepted
+
+The request is accepted for processing.

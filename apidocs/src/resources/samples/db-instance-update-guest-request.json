@@ -1,6 +1,11 @@
-HTTP/1.1 200 OK
+GET /v1.0/1234/instances/692d8418-7a8f-47f1-8060-59846c6e024f/action HTTP/1.1
+User-Agent: python-example-client
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
+Accept: application/json
 Content-Type: application/json
-Content-Length: 987
-Date: Wed, 25 Jan 2012 21:58:17 GMT
 
-{ "TODO": "I O U A METHOD</text></xml>" }
+{
+    "update": {
+    }
+}

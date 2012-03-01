@@ -285,6 +285,17 @@ class UpgradeCommands(object):
         except:
             print sys.exc_info()[1]
 
+class UpdateCommands(object):
+    """Commands to update the guest agent."""
+
+    def instance(self, id):
+        """Update the guest agent on a single instance."""
+        dbaas = common.get_client()
+        try:
+            _pretty_print(dbaas.management.update(id)._info)
+        except:
+            print sys.exc_info()[1]
+
 
 
 
@@ -302,7 +313,9 @@ COMMANDS = {'auth': common.Auth,
             'storage': StorageCommands,
             'root': RootCommands,
             'account': AccountCommands,
-            'upgrade': UpgradeCommands}
+            'upgrade': UpgradeCommands,
+            'update': UpdateCommands,
+            }
 
 
 def main():
