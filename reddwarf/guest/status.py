@@ -14,11 +14,58 @@
 #    under the License.
 
 """Status of the application on the guest."""
-RUNNING = 0x01
-BLOCKED = 0x02
-PAUSED = 0x03
-SHUTDOWN = 0x04
-CRASHED = 0x06
-FAILED = 0x08
-BUILDING = 0x09
-UNKNOWN=0x16
+
+class GuestStatus(object):
+    _lookup = {}
+
+    def __init__(self, code, description):
+        self._code = code
+        self._description = description
+        GuestStatus._lookup[code] = self
+
+    @property
+    def code(self):
+        return self._code
+
+    @property
+    def description(self):
+        return self._description
+
+    def __eq__(self, other):
+        if isinstance(other, GuestStatus):
+            return self.code == other.code
+        if type(other) == int:
+            return self.code == other
+        if type(other) == str:
+            return self.description == other
+
+    @staticmethod
+    def from_code(code):
+        if code not in GuestStatus._lookup:
+            msg = 'Status code %d is not a valid GuestStatus.'
+            raise ValueError(msg % code)
+        return GuestStatus._lookup[code]
+
+    @staticmethod
+    def from_description(desc):
+        all_items = GuestStatus._lookup.items()
+        status_codes = [code for (code, status) in all_items if status == desc]
+        if not status_codes:
+            msg = 'Status description %s is not a valid GuestStatus.'
+            raise ValueError(msg % desc)
+        return GuestStatus._lookup[status_codes[0]]
+
+    @staticmethod
+    def is_valid_code(code):
+        return code in GuestStatus._lookup
+
+RUNNING  = GuestStatus(0x01, 'RUNNING')
+BLOCKED  = GuestStatus(0x02, 'BLOCKED')
+PAUSED   = GuestStatus(0x03, 'PAUSED')
+SHUTDOWN = GuestStatus(0x04, 'SHUTDOWN')
+CRASHED  = GuestStatus(0x06, 'CRASHED')
+FAILED   = GuestStatus(0x08, 'FAILED')
+BUILDING = GuestStatus(0x09, 'BUILDING')
+UNKNOWN  = GuestStatus(0x16, 'UNKNOWN')
+
+GuestStatus.__init__ = None

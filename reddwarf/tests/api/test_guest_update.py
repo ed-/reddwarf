@@ -64,6 +64,7 @@ class GuestUpdateTest(test.TestCase):
         super(GuestUpdateTest, self).setUp()
         self.stubs.Set(reddwarf.db.api, "localid_from_uuid", localid_from_uuid)
         self.stubs.Set(reddwarf.api.common, "instance_exists", instance_exists)
+
         self.context = context.RequestContext('fake', 'fake', 
                                               auth_token=True, is_admin=False)
         self.admin_context = context.RequestContext('fake', 'fake', 
@@ -81,8 +82,24 @@ class GuestUpdateTest(test.TestCase):
         res = req.get_response(util.wsgi_app(
                                fake_auth_context=self.admin_context))
         self.assertEqual(res.status_int, 404)
+
+    def test_guest_update_failure(self):
+        req = webob.Request.blank(mgmt_url + 'instances/1/action')
+        req.method='POST'
+        req.body = json.dumps({'update': {}})
+        req.headers["content-type"] = "application/json"
+        res = req.get_response(util.wsgi_app(
+                               fake_auth_context=self.admin_context))
+        self.assertEqual(res.status_int, 404)
         
     def test_guest_update(self):
+        m = mox.Mox()
+        def fake_update_guest():
+            pass
+        m.StubOutWithMock(reddwarf.compute.api.API, 'update_guest', fake_update_guest)
+        reddwarf.compute.api.API.update_guest(mox.IgnoreArg(), mox.IgnoreArg())
+        m.ReplayAll()
+
         req = webob.Request.blank(mgmt_url + 'instances/1/action')
         req.method='POST'
         req.body = json.dumps({'update': {}})
@@ -90,3 +107,5 @@ class GuestUpdateTest(test.TestCase):
         res = req.get_response(util.wsgi_app(
                                fake_auth_context=self.admin_context))
         self.assertEqual(res.status_int, 202)
+        m.UnsetStubs()
+        m.VerifyAll()
